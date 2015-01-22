@@ -1,15 +1,13 @@
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
- * Created by nbayyana on 1/10/15.
+ * Created by on 1/10/15.
  */
-class Student {
+class Man {
     public String name;
     public int age;
 
@@ -23,16 +21,16 @@ public class JaxonEx {
     public static void main(String args[]) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         String jsonStr = "{\"name\" : \"Rao\", \"age\" : 31}";
-        Student s = null;
+        Man s = null;
         try {
-            s = mapper.readValue(jsonStr, Student.class);
+            s = mapper.readValue(jsonStr, Man.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
         System.out.println(s);
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        Student s2 = new Student();
+        Man s2 = new Man();
         s2.name = "hello";
         s2.age = 32;
         try {
