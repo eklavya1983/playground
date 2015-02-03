@@ -1,6 +1,9 @@
 package akka;
 
-import akka.actor.*;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import scala.Option;
@@ -8,6 +11,8 @@ import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
+
+import java.util.stream.Stream;
 
 /**
  * Created on 2/1/15.
@@ -133,7 +138,12 @@ public class Lifecycle {
     }
 
     public static void main(String args[]) throws Exception {
+        String cp = System.getProperty("java.class.path");
+        String[] split = cp.split(":");
+        Stream.of(split).forEach(e -> System.out.println(e));
+
         ActorSystem system = ActorSystem.create("actor-system");
+        // system.logConfiguration();
         LoggingAdapter log = Logging.getLogger(system, "main");
         ActorRef parentRef = system.actorOf(Props.create(ParentActor.class), "parent");
 
