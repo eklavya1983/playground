@@ -1,0 +1,7 @@
+**/.idea/
+**/*.iml
+curl/
+folly/
+replica/
+s3/
+test/
