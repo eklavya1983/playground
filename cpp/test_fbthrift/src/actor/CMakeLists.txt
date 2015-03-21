@@ -22,23 +22,14 @@ project("actor")
 #	DEPENDS Service.thrift
 #	)
 
-# flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -std=c++11")
+# External dependency include directories
+include_directories(./gen-cpp2)
 
 add_subdirectory(test)
 
 # Get generated thrift sources
 file(GLOB_RECURSE thrift_gen_sources "gen-cpp2/*.cpp")
 message("Thirft sources: ${thrift_gen_sources}")
-
-# External dependency include directories
-include_directories(/home/nbayyana/playground/cpp/test_fbthrift/fbthrift
-	/home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/folly
-	/home/nbayyana/playground/cpp/test_fbthrift/src
-	./gen-cpp2)
-
-# External dependency library directories
-LINK_DIRECTORIES(/home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/lib/cpp/.libs /home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/lib/cpp2/.libs /home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/folly/folly/.libs)
 
 # Executable
 add_library(actor
