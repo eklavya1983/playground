@@ -4,4 +4,9 @@ curl/
 folly/
 replica/
 s3/
-test/
+scratch/
+test_fbthrift/.ycm_extra_conf.pyc
+test_fbthrift/fbthrift/
+test_fbthrift/gtest-1.7.0/
+test_fbthrift/src/actor/gen-cpp2/
+test_fbthrift/src/build/
