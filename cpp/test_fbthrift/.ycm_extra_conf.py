@@ -91,8 +91,7 @@ flags = [
 '-I/home/nbayyana/playground/cpp/test_fbthrift/fbthrift',
 '-I/home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/folly',
 '-I/home/nbayyana/temp/proxyserver/3rdparty/proxygen/proxygen/lib/test/gmock-1.6.0/gtest/include',
-'-I/home/nbayyana/playground/cpp/test_fbthrift/src'
-'-I/home/nbayyana/playground/cpp/test_fbthrift/src/actor'
+'-I/home/nbayyana/playground/cpp/test_fbthrift/src',
 '-I/home/nbayyana/playground/cpp/test_fbthrift/src/actor/gen-cpp2'
 ]
 

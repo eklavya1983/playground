@@ -85,3 +85,27 @@ ndler, folly::wangle::ChannelHandlerPtr<apache::thrift::Cpp2Channel, false> >, a
 #14 0x00007ffff6d89cd6 in folly::EventBase::loopBody (this=this@entry=0x7fffd4000b00,
     flags=flags@entry=0) at io/async/EventBase.cpp:333
 #15 0x00007ffff6d89f77 in folly::EventBase::loop (this=this@entry=0x7fffd4000b00)
+
+
+Serialization notes:
+Serializtion
+ConfigApi_client.cpp: 	ConfigApiAsyncClient::registerService
+ConfigApi.tcc: 		ConfigApiAsyncClient::registerServiceT
+apache::thrift::BinaryProtocolWriter prot;
+folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
+prot->setOutput(&queue, bufSize);
+args.write(prot);
+this->channel_->sendRequest(rpcOptions, std::move(callback), std::move(ctx), queue.move());
+HeaderClientChannel::sendRequest()
+Cpp2Channel::sendMessage()
+FramingChannelHandler::addFrame()
+Pipeline::write();
+
+
+Deserialization
+ConfigApiAsyncProcessor::process()
+AsyncProcessor.h:
+ConfigApiAsyncProcessor::process_registerService
+GeneratedAsyncProcessor::deserializeRequest()
+deserilization codepath ex:
+ConfigApiAsyncProcessor::process_registerService() -> deserializeRequest(args, buf.get(), iprot.get(), c.get());

@@ -1,15 +1,30 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <ActorServer.h>
+#include <actor/ActorSystem.hpp>
+#include <actor/ActorServer.h>
 
 namespace actor {
 
-void ServiceHandler::replicaRequest(
-    std::unique_ptr< ::actor::cpp2::ReplicaRequestHeader> header,
-    std::unique_ptr<std::string> payload) {
+ServiceHandler::ServiceHandler(ActorSystem *system) {
+   system_ = system; 
 }
 
-ReplicaActorServer::ReplicaActorServer(int port)
+void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
+                                  std::unique_ptr<folly::IOBuf> payload) {
+    // TODO: Check if move is succesful or not
+    bool ret = system_->routeToActor(
+        ActorMsg(*header, std::make_shared<Payload>(std::move(payload))));
+    if (!ret) {
+        // TODO: log an error
+    }
+}
+
+void ServiceHandler::replicaRequest(std::unique_ptr<ReplicaRequestHeader> header,
+                                    std::unique_ptr<std::string> payload) {
+}
+
+ReplicaActorServer::ReplicaActorServer(ActorSystem *system, int port)
 {
+    system_ = system;
     port_ = port;
 }
 
@@ -26,7 +41,7 @@ void ReplicaActorServer::start() {
         server->setThreadManager(threadManager);
     }
     server->setPort(port_);
-    server->setInterface(std::unique_ptr<ServiceHandler>(new ServiceHandler));
+    server->setInterface(std::unique_ptr<ServiceHandler>(new ServiceHandler(system_)));
 
     serverThread_.reset(new apache::thrift::util::ScopedServerThread(server));
 }
