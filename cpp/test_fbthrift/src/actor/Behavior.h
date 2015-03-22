@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <actor/ActorMsg.h>
 
+#define on(msgType) OnMsg(ACTORMSGTYPEID(msgType))
+
 namespace actor {
 
 using namespace cpp2;
@@ -12,25 +14,20 @@ using namespace cpp2;
 using BehaviorHandler = std::function<void (ActorMsg&&)>;
 
 struct BehaviorItem {
-    ActorMsgType type;
+    ActorMsgTypeId typeId;
     BehaviorHandler handler;
 };
 
 // TODO: Check if this can be made more efficient in terms of reducing copies
-struct On {
-    On(const ActorMsgType& type) {
-        this->type = type;
+struct OnMsg {
+    OnMsg(const ActorMsgTypeId& typeId) {
+        this->typeId = typeId;
     }
     BehaviorItem operator>>(BehaviorHandler handler) {
-        return {type, handler};
+        return {typeId, handler};
     }
-    ActorMsgType type;
+    ActorMsgTypeId typeId;
 };
-
-template <class MsgEnumT>
-On on(const MsgEnumT& type) {
-    return On(static_cast<ActorMsgType>(type));
-}
 
 struct Behavior {
     Behavior() {}
@@ -47,14 +44,14 @@ struct Behavior {
     void operator += (const std::vector<BehaviorItem>& items)
     {
         for (auto &item : items) {
-            handlers_[item.type] = item.handler;
+            handlers_[item.typeId] = item.handler;
         }
     }
 
     inline void handle(ActorMsg &&msg) {
-        auto handlerItr = handlers_.find(actorMsgType(msg));
+        auto handlerItr = handlers_.find(actorMsgTypeId(msg));
         if (handlerItr == handlers_.end()) {
-            handlerItr = handlers_.find(static_cast<ActorMsgType>(ActorMsgTypes::OtherMsg));
+            handlerItr = handlers_.find(static_cast<ActorMsgTypeId>(ActorMsgTypeIds::OtherMsg));
             if (handlerItr == handlers_.end()) {
                 assert(!"TODO: Implement"); 
                 // TODO: Determine behavior here
@@ -64,6 +61,6 @@ struct Behavior {
         (handlerItr->second)(std::move(msg));
     }
  protected:
-    std::unordered_map<ActorMsgType, BehaviorHandler> handlers_;
+    std::unordered_map<ActorMsgTypeId, BehaviorHandler> handlers_;
 };
 }  // namespace actor

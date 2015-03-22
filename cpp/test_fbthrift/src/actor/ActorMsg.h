@@ -3,6 +3,8 @@
 #include <thrift/lib/cpp2/protocol/BinaryProtocol.h>
 #include <actor/gen-cpp2/Service_types.h>
 
+#define ACTORMSGTYPEID(msgType) static_cast<ActorMsgTypeId>(ActorMsgTypeIds::msgType##Msg)
+
 namespace actor {
 
 using namespace cpp2;
@@ -10,20 +12,20 @@ using namespace cpp2;
 using Payload = std::shared_ptr<void>;
 using ActorMsg = std::pair<ActorMsgHeader, Payload>;
 
-inline ActorMsgType actorMsgType(const ActorMsg &msg) {
-    return msg.first.type;
+inline ActorMsgTypeId actorMsgTypeId(const ActorMsg &msg) {
+    return msg.first.typeId;
 }
-inline void setActorMsgType(ActorMsg &msg, ActorMsgType type) {
-    msg.first.type = type;
+inline void setActorMsgTypeId(ActorMsg &msg, ActorMsgTypeId typeId) {
+    msg.first.typeId = typeId;
 }
 
 template <class MsgEnumT>
-inline ActorMsg makeActorMsg(const MsgEnumT& enumType,
+inline ActorMsg makeActorMsg(const MsgEnumT& enumId,
                              const ActorId &from, const ActorId &to,
                              std::shared_ptr<void> &&payload) {
     ActorMsg msg;
     auto &header = msg.first;
-    header.type = static_cast<ActorMsgType>(enumType);
+    header.typeId = static_cast<ActorMsgTypeId>(enumId);
     header.from = from;
     header.to = to;
     msg.second = std::move(payload);

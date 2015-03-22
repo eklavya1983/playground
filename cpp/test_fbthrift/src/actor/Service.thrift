@@ -2,7 +2,7 @@ namespace cpp actor
 
 typedef i32 ActorSystemId
 typedef i32 LocalActorId
-typedef i32 ActorMsgType
+typedef i32 ActorMsgTypeId
 typedef i64 RequestId
 typedef binary (cpp.type = "folly::IOBuf") ActorMsgBuffer
 
@@ -12,7 +12,7 @@ struct ActorId {
 }
 
 struct ActorMsgHeader {
-    1: ActorMsgType		type;
+    1: ActorMsgTypeId		typeId;
     2: ActorId			from;
     3: ActorId			to;
     4: RequestId		requestId;
@@ -49,7 +49,7 @@ service ServiceApi {
 /*-----------------------------------------------------------
  * Common actor messages 
  *-----------------------------------------------------------*/
-enum ActorMsgTypes {
+enum ActorMsgTypeIds {
     COMMON_MSG_BEGIN		= 0,
     OtherMsg			= 1,
     InitMsg			= 2,

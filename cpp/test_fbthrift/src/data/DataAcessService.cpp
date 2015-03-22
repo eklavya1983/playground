@@ -26,7 +26,7 @@ struct DataAccessServiceActor : ActorSystem {
         ActorSystem::initBehavior_();
 
         functionalBehavior_ += {
-            on(DataAcessMsgTypes::AddVolumeMsg) >> [this](ActorMsg &&msg) {
+            on(AddVolume) >> [this](ActorMsg &&msg) {
                 handleAddVolumeMsg_(std::move(msg));
             }
         };

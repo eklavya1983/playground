@@ -20,7 +20,7 @@ protected:
         ActorSystem::initBehavior_();
 
         functionalBehavior_ += {
-            on(ConfigMsgTypes::RegisterActorSystemMsg) >> [this](ActorMsg &&msg) {
+            on(RegisterActorSystem) >> [this](ActorMsg &&msg) {
                 auto &payloadPtr = msgPayloadPtr<RegisterActorSystem>(msg);
                 updateActorRegistry_(payloadPtr->systemInfo);
                 // TODO: Broadcast

@@ -24,9 +24,9 @@ ActorSystem::~ActorSystem()
 void ActorSystem::initSerializers()
 {
     /* Put common handlers */
-    MAP_SERAILIZER(ActorMsgTypes::GetActorRegistryMsg, GetActorRegistry);
-    MAP_SERAILIZER(ActorMsgTypes::RegisterActorSystemMsg, RegisterActorSystem);
-    MAP_SERAILIZER(ActorMsgTypes::AddVolumeMsg, AddVolume);
+    ADD_SERAILIZER(GetActorRegistry);
+    ADD_SERAILIZER(RegisterActorSystem);
+    ADD_SERAILIZER(AddVolume);
 }
 
 void ActorSystem::init() {
@@ -40,29 +40,29 @@ void ActorSystem::initBehaviors_()
 {
     NotificationQueueActor::initBehaviors_();
     initBehavior_ += {
-        on(ActorMsgTypes::InitMsg) >> [this](ActorMsg &&msg) {
+        on(Init) >> [this](ActorMsg &&msg) {
             initConfigRemoteActor_();
             sendRegisterMsg_();
         },
-        on(ActorMsgTypes::RegisterActorSystemRespMsg) >> [this](ActorMsg &&msg) {
+        on(RegisterActorSystemResp) >> [this](ActorMsg &&msg) {
             changeBhavior(&functionalBehavior_);
         }
     };
     functionalBehavior_ += {
-        on(ActorMsgTypes::GetActorRegistryMsg) >> [this](ActorMsg &&msg) {
+        on(GetActorRegistry) >> [this](ActorMsg &&msg) {
             /// reply(msg, getActorRegistry());  
         }
     };
 #if 0
     ACTORMSGHANDLER(initBehavior_,
-                    ActorMsgTypes::InitMsg,
+                    ActorMsgTypeIds::InitMsg,
                     ActorSystem::handleInitMsg)
     ACTORMSGHANDLER(initBehavior_,
-                    ActorMsgTypes::RegistrationRespMsg,
+                    ActorMsgTypeIds::RegistrationRespMsg,
                     ActorSystem::handleRegistrationRespMsg)
     
     ACTORMSGHANDLER(functionalBehavior_,
-                    ActorMsgTypes::UpdateActorTableMsg,
+                    ActorMsgTypeIds::UpdateActorTableMsg,
                     ActorSystem::handleUpdateActorTableMsg)
 #endif
 
@@ -90,7 +90,7 @@ void ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor) 
     }
     if (actor) {
         actor->send(
-            makeActorMsg(ActorMsgTypes::UpdateActorInfoMsg,
+            makeActorMsg(ActorMsgTypeIds::UpdateActorInfoMsg,
                          id_,
                          info.id,
                          std::make_shared<UpdateActorInfo>(info)));

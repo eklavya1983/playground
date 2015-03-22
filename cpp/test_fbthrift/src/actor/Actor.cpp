@@ -17,22 +17,22 @@ void Actor::init() {
 
 void Actor::initBehaviors_() {
     initBehavior_ = {
-        on(ActorMsgTypes::OtherMsg) >> [this](ActorMsg &&m) {
+        on(Other) >> [this](ActorMsg &&m) {
             dropMessage(std::move(m));
         }
     };
     functionalBehavior_ = {
-        on(ActorMsgTypes::OtherMsg) >> [this](ActorMsg &&m) {
+        on(Other) >> [this](ActorMsg &&m) {
             dropMessage(std::move(m));
         }
     };
     stoppedBehavior_ = {
-        on(ActorMsgTypes::OtherMsg) >> [this](ActorMsg &&m) {
+        on(Other) >> [this](ActorMsg &&m) {
             dropMessage(std::move(m));
         }
     };
     inErrBehavior_ = {
-        on(ActorMsgTypes::OtherMsg) >> [this](ActorMsg &&m) {
+        on(Other) >> [this](ActorMsg &&m) {
             dropMessage(std::move(m));
         }
     };

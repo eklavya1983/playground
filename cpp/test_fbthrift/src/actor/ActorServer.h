@@ -5,11 +5,12 @@
 #include <actor/gen-cpp2/ServiceApi.h>
 #include <actor/ActorMsg.h>
 
+#if 0
 #define MAP_SERAILIZER(enumType, msgType) \
-    ServiceHandler::addActorMsgSerializer<msgType>(static_cast<ActorMsgType>(enumType))
+    ServiceHandler::addActorMsgSerializer<msgType>(static_cast<ActorMsgTypeId>(enumType))
+#endif
 #define ADD_SERAILIZER(msgType) \
-    ServiceHandler::addActorMsgSerializer<msgType>(\
-                        static_cast<ActorMsgType>(ActorMsgTypes::msgType##Msg))
+    ServiceHandler::addActorMsgSerializer<msgType>(ACTORMSGTYPEID(msgType))
 
 namespace actor {
 
@@ -41,7 +42,7 @@ struct ServiceHandler : ::actor::cpp2::ServiceApiSvIf {
     /* Typedefs */
     using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
     using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
-    using SerializerTbl = std::unordered_map<ActorMsgType, std::pair<SerializerF, DeserializerF>>;
+    using SerializerTbl = std::unordered_map<ActorMsgTypeId, std::pair<SerializerF, DeserializerF>>;
 
     explicit ServiceHandler(ActorSystem *system);
     virtual void actorMessage(std::unique_ptr<ActorMsgHeader> header,
@@ -49,8 +50,8 @@ struct ServiceHandler : ::actor::cpp2::ServiceApiSvIf {
     virtual void replicaRequest(std::unique_ptr<ReplicaRequestHeader> header,
                                 std::unique_ptr<std::string> payload) override;
     template <class MsgT>
-    static void addActorMsgSerializer(ActorMsgType type) {
-        actorMsgSerializerTbl_[type] = {&toIOBuf<MsgT>, &toActorMsg<MsgT>};
+    static void addActorMsgSerializer(ActorMsgTypeId typeId) {
+        actorMsgSerializerTbl_[typeId] = {&toIOBuf<MsgT>, &toActorMsg<MsgT>};
     }
     inline static SerializerTbl& getSerializerTbl() {return actorMsgSerializerTbl_;}
 

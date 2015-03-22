@@ -45,3 +45,4 @@ Work Items
 -Add basic support for behaviors
 -On the replica side go through init sequence where replica is decided
 -go into ready state
+-make serialization registation static similar gtest initialization

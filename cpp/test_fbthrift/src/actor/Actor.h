@@ -29,7 +29,7 @@ struct Actor {
     virtual void deferMessage(ActorMsg &&msg) = 0;
 
     template <class MsgTEnum>
-    void reply(const ActorMsg& msg, const MsgTEnum &type, Payload &&payload);
+    void reply(const ActorMsg& msg, const MsgTEnum &enumId, Payload &&payload);
     
 protected:
     virtual void initBehaviors_();
