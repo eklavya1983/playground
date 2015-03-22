@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+set -x
+
+cd actor
+make
+cd ../build
+cmake ..
+make
