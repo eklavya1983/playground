@@ -21,14 +21,6 @@ ActorSystem::~ActorSystem()
     eventBase_.terminateLoopSoon();
 }
 
-void ActorSystem::initSerializers()
-{
-    /* Put common handlers */
-    ADD_SERAILIZER(GetActorRegistry);
-    ADD_SERAILIZER(RegisterActorSystem);
-    ADD_SERAILIZER(AddVolume);
-}
-
 void ActorSystem::init() {
     NotificationQueueActor::init();
 
@@ -89,11 +81,10 @@ void ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor) 
         createRemoteActor_(info);
     }
     if (actor) {
+        auto payload = std::make_shared<UpdateActorInfo>();
+        payload->info = info;
         actor->send(
-            makeActorMsg(ActorMsgTypeIds::UpdateActorInfoMsg,
-                         id_,
-                         info.id,
-                         std::make_shared<UpdateActorInfo>(info)));
+            makeActorMsg<UpdateActorInfo>(id_, info.id, std::move(payload)));
     }
 }
 

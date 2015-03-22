@@ -3,8 +3,6 @@
 #include <thrift/lib/cpp2/protocol/BinaryProtocol.h>
 #include <actor/gen-cpp2/Service_types.h>
 
-#define ACTORMSGTYPEID(msgType) static_cast<ActorMsgTypeId>(ActorMsgTypeIds::msgType##Msg)
-
 namespace actor {
 
 using namespace cpp2;
@@ -17,19 +15,6 @@ inline ActorMsgTypeId actorMsgTypeId(const ActorMsg &msg) {
 }
 inline void setActorMsgTypeId(ActorMsg &msg, ActorMsgTypeId typeId) {
     msg.first.typeId = typeId;
-}
-
-template <class MsgEnumT>
-inline ActorMsg makeActorMsg(const MsgEnumT& enumId,
-                             const ActorId &from, const ActorId &to,
-                             std::shared_ptr<void> &&payload) {
-    ActorMsg msg;
-    auto &header = msg.first;
-    header.typeId = static_cast<ActorMsgTypeId>(enumId);
-    header.from = from;
-    header.to = to;
-    msg.second = std::move(payload);
-    return msg;
 }
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolWriter>
@@ -66,6 +51,62 @@ inline void toActorMsg(const std::unique_ptr<folly::IOBuf> &buf, ActorMsg &msg) 
     std::shared_ptr<MsgT> deserializedMsg = std::make_shared<MsgT>();
     deserializeActorMsg<MsgT, ProtocolT>(buf.get(), *deserializedMsg);
     msg.second = deserializedMsg;
+}
+
+/* Typedefs */
+using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
+using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
+using SerializerTbl = std::unordered_map<ActorMsgTypeId, std::pair<SerializerF, DeserializerF>>;
+extern SerializerTbl *gMsgMapTbl;
+
+/* To store the type id for type T*/
+template <class T>
+struct ActorMsgTypeInfo {
+    static ActorMsgTypeId typeId;
+};
+
+template <class MsgT, class EnumT>
+void addActorMsgMapping(EnumT e) {
+    /* Store enum id in ActorMsgTypeInfo */
+    auto typeId = static_cast<ActorMsgTypeId>(e);
+    ActorMsgTypeInfo<MsgT>::typeId = typeId;
+
+    if (e <= ActorMsgTypeIds::NOPAYLOAD_MSG_END) {
+        /* Don't add serializers for types that don't necessarily have payloads */
+        return;
+    }
+
+    /* Map the serializers and deserializer for the the type */
+    if (gMsgMapTbl == nullptr) {
+        gMsgMapTbl = new SerializerTbl();
+    }
+    CHECK(gMsgMapTbl->find(typeId) == gMsgMapTbl->end())
+        << typeId << " is already registered";
+    (*gMsgMapTbl)[typeId] = {&toIOBuf<MsgT>, &toActorMsg<MsgT>};
+}
+extern void initActorMsgMappings();
+
+
+/**
+* @brief Use this function for createing an actor message
+*
+* @tparam MsgT
+* @param from
+* @param to
+* @param payload
+*
+* @return 
+*/
+template <class MsgT>
+inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
+                             std::shared_ptr<void> &&payload) {
+    ActorMsg msg;
+    auto &header = msg.first;
+    header.typeId = ActorMsgTypeInfo<MsgT>::typeId;
+    header.from = from;
+    header.to = to;
+    msg.second = std::move(payload);
+    return msg;
 }
 
 }  // namesapce actor

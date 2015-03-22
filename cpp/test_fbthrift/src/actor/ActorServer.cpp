@@ -3,9 +3,6 @@
 #include <actor/ActorServer.h>
 
 namespace actor {
-/* Static declarations */
-ServiceHandler::SerializerTbl ServiceHandler::actorMsgSerializerTbl_;
-
 ReplicaActorServer::ReplicaActorServer(ActorSystem *system, int port)
 {
     system_ = system;

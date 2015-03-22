@@ -15,7 +15,6 @@ struct ActorSystem : NotificationQueueActor {
                 const std::string &configIp,
                 int configPort);
     virtual ~ActorSystem();
-    static void initSerializers();
 
     virtual void init() override;
 

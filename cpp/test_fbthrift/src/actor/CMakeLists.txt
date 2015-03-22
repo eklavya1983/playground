@@ -33,6 +33,7 @@ message("Thirft sources: ${thrift_gen_sources}")
 
 # Executable
 add_library(actor
+	ActorMsg.cpp
 	Actor.cpp
 	ActorSystem.cpp
 	ServiceHandle.cpp

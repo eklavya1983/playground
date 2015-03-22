@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <actor/ActorMsg.h>
 
-#define on(msgType) OnMsg(ACTORMSGTYPEID(msgType))
+#define on(msgT) OnMsg(ActorMsgTypeInfo<msgT>::typeId)
 
 namespace actor {
 
@@ -51,7 +51,7 @@ struct Behavior {
     inline void handle(ActorMsg &&msg) {
         auto handlerItr = handlers_.find(actorMsgTypeId(msg));
         if (handlerItr == handlers_.end()) {
-            handlerItr = handlers_.find(static_cast<ActorMsgTypeId>(ActorMsgTypeIds::OtherMsg));
+            handlerItr = handlers_.find(ActorMsgTypeInfo<Other>::typeId);
             if (handlerItr == handlers_.end()) {
                 assert(!"TODO: Implement"); 
                 // TODO: Determine behavior here

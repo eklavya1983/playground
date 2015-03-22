@@ -50,18 +50,22 @@ service ServiceApi {
  * Common actor messages 
  *-----------------------------------------------------------*/
 enum ActorMsgTypeIds {
-    COMMON_MSG_BEGIN		= 0,
     OtherMsg			= 1,
     InitMsg			= 2,
-    GetActorRegistryMsg		= 3,
-    GetActorRegistryRespMsg	= 4,
-    UpdateActorRegistryMsg	= 5,
-    UpdateActorInfoMsg		= 6,
+    NOPAYLOAD_MSG_END		= 99,
+
+    COMMON_MSG_BEGIN		= 100,
+    GetActorRegistryMsg		= 101,
+    GetActorRegistryRespMsg	= 102,
+    UpdateActorRegistryMsg	= 103,
+    UpdateActorInfoMsg		= 104,
     COMMON_MSG_END		= 999,
+
     CONFIG_MSG_BEGIN 		= 1000,
     RegisterActorSystemMsg 	= 1001,
     RegisterActorSystemRespMsg 	= 1002,
     CONFIG_MSG_END 		= 1999,
+
     DATAACESS_MSG_BEGIN 	= 2000,
     AddVolumeMsg 		= 2001,
     PutObjectMsg		= 2002,
@@ -71,15 +75,22 @@ enum ActorMsgTypeIds {
     DATAACESS_MSG_END 		= 2999,
 }
 
+struct Init {}
+struct Other {}
+
 struct GetActorRegistry {
 }
 
-typedef list<ActorInfo> GetActorRegistryResp
+struct GetActorRegistryResp {
+    1: list<ActorInfo> infoList;
+}
 
 struct UpdateActorRegistry {
 }
 
-typedef ActorInfo UpdateActorInfo
+struct UpdateActorInfo {
+    1: ActorInfo info;
+}
 
 /*-----------------------------------------------------------
  * Config messages 
