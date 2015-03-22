@@ -5,22 +5,15 @@
 #include <actor/ActorMsg.h>
 #include <actor/Behavior.h>
 
-#if 0
-#define CASE(id) case static_cast<int>((id))
-#define SWITCH(msg) switch (actorMsgType(msg))
-#define ACTORMSGHANDLER(behavior, type, handler) \
-    behavior[static_cast<int>((type))] = std::bind(&handler, this, std::placeholders::_1)
-#endif
-
 namespace actor {
 using namespace cpp2;
 
+struct ActorSystem;
 using ActorHandlerF = std::function<void (ActorMsg &&)>;
-// using Behavior = std::unordered_map<ActorMsgType, ActorHandlerF>;
 
 struct Actor {
     /* Lifecycle */
-    Actor();
+    explicit Actor(ActorSystem *system);
     virtual ~Actor();
     virtual void init();
 
@@ -34,14 +27,16 @@ struct Actor {
 
     virtual void dropMessage(ActorMsg &&msg) = 0;
     virtual void deferMessage(ActorMsg &&msg) = 0;
-    
-    // template <class T>
-    // void reply(const ActorMsg &origMsg, std::shared_ptr<T> paylaod) {}
 
+    template <class MsgTEnum>
+    void reply(const ActorMsg& msg, const MsgTEnum &type, Payload &&payload);
+    
 protected:
     virtual void initBehaviors_();
 
+    ActorSystem                         *system_;
     ActorId                             id_;
+    std::string                         strId_;
     /* Behaviors */
     Behavior                            initBehavior_;
     Behavior                            functionalBehavior_;
@@ -55,8 +50,8 @@ using ActorPtr = std::shared_ptr<Actor>;
 using ActorQueue = folly::NotificationQueue<ActorMsg>;
 
 struct NotificationQueueActor : Actor, ActorQueue::Consumer {
-    NotificationQueueActor();
-    explicit NotificationQueueActor(folly::EventBase *eventBase);
+    using Actor::Actor;
+    explicit NotificationQueueActor(ActorSystem *system, folly::EventBase *eventBase);
     virtual void init() override;
     
     void setEventBase(folly::EventBase *eventBase);

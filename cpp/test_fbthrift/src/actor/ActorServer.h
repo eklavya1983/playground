@@ -7,6 +7,9 @@
 
 #define MAP_SERAILIZER(enumType, msgType) \
     ServiceHandler::addActorMsgSerializer<msgType>(static_cast<ActorMsgType>(enumType))
+#define ADD_SERAILIZER(msgType) \
+    ServiceHandler::addActorMsgSerializer<msgType>(\
+                        static_cast<ActorMsgType>(ActorMsgTypes::msgType##Msg))
 
 namespace actor {
 
@@ -14,6 +17,22 @@ using namespace cpp2;
 
 /* Forward declarations */
 struct ActorSystem;
+
+struct ActorServer {
+    virtual void start() = 0;
+    virtual void stop() = 0;
+};
+using ActorServerPtr = std::shared_ptr<ActorServer>;
+
+struct ReplicaActorServer : ActorServer {
+    explicit ReplicaActorServer(ActorSystem *system, int port);
+    virtual void start() override;
+    virtual void stop() override;
+ protected:
+    ActorSystem *system_;
+    int port_;
+    std::unique_ptr<apache::thrift::util::ScopedServerThread> serverThread_;
+};
 
 /**
 * @brief Thrift cpp2 handler for handling async requests
@@ -39,21 +58,7 @@ struct ServiceHandler : ::actor::cpp2::ServiceApiSvIf {
     static SerializerTbl actorMsgSerializerTbl_;
 
     ActorSystem *system_;
+    friend struct ActorServer;
 };
 
-struct ActorServer {
-    virtual void start() = 0;
-    virtual void stop() = 0;
-};
-using ActorServerPtr = std::shared_ptr<ActorServer>;
-
-struct ReplicaActorServer : ActorServer {
-    explicit ReplicaActorServer(ActorSystem *system, int port);
-    virtual void start() override;
-    virtual void stop() override;
- protected:
-    ActorSystem *system_;
-    int port_;
-    std::unique_ptr<apache::thrift::util::ScopedServerThread> serverThread_;
-};
 }  // namespace actor

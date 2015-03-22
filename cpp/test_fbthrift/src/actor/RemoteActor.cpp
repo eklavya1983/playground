@@ -9,11 +9,10 @@ using namespace apache::thrift;
 using namespace apache::thrift::async;
 using namespace apache::thrift::transport;
 
-RemoteActor::RemoteActor() {
-}
-
-RemoteActor::RemoteActor(const ActorInfo &info, folly::EventBase *eventBase)
-: NotificationQueueActor(eventBase)
+RemoteActor::RemoteActor(ActorSystem *system,
+                         folly::EventBase *eventBase,
+                         const ActorInfo &info)
+: NotificationQueueActor(system, eventBase)
 {
     info_ = info;    
     // TODO: Handle socket errors

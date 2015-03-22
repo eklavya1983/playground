@@ -1,8 +1,10 @@
 #include <actor/Actor.h>
+#include <sstream>
 
 namespace actor {
 
-Actor::Actor() {
+Actor::Actor(ActorSystem *system) {
+    system_ = system;
     currentBehavior_ = nullptr;
 }
 
@@ -40,6 +42,10 @@ void Actor::initBehaviors_() {
 void Actor::setId(const ActorId &id)
 {
     id_ = id;
+
+    std::stringstream ss;
+    ss << "[" << id.systemId << ":" << id.localId << "]";
+    strId_ = ss.str();
 }
 
 ActorId Actor::getId() const
@@ -55,10 +61,10 @@ void Actor::handle(ActorMsg &&msg) {
     currentBehavior_->handle(std::move(msg));
 }
 
-NotificationQueueActor::NotificationQueueActor() {
-}
-
-NotificationQueueActor::NotificationQueueActor(folly::EventBase *eventBase) {
+NotificationQueueActor::NotificationQueueActor(ActorSystem *system,
+                                               folly::EventBase *eventBase)
+: Actor(system)
+{
     setEventBase(eventBase);
 }
 

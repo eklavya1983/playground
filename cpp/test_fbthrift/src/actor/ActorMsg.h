@@ -17,8 +17,21 @@ inline void setActorMsgType(ActorMsg &msg, ActorMsgType type) {
     msg.first.type = type;
 }
 
+template <class MsgEnumT>
+inline ActorMsg makeActorMsg(const MsgEnumT& enumType,
+                             const ActorId &from, const ActorId &to,
+                             std::shared_ptr<void> &&payload) {
+    ActorMsg msg;
+    auto &header = msg.first;
+    header.type = static_cast<ActorMsgType>(enumType);
+    header.from = from;
+    header.to = to;
+    msg.second = std::move(payload);
+    return msg;
+}
+
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolWriter>
-void serializeActorMsg(const MsgT &msg, std::unique_ptr<folly::IOBuf> &serializedBuf) {
+inline void serializeActorMsg(const MsgT &msg, std::unique_ptr<folly::IOBuf> &serializedBuf) {
     ProtocolT writer;
     folly::IOBufQueue queue(folly::IOBufQueue::cacheChainLength());
     size_t bufSize = msg.serializedSizeZC(&writer);
@@ -28,26 +41,26 @@ void serializeActorMsg(const MsgT &msg, std::unique_ptr<folly::IOBuf> &serialize
 }
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolReader>
-std::shared_ptr<MsgT> deserializeActorMsg(const folly::IOBuf *buf) {
+inline std::shared_ptr<MsgT> deserializeActorMsg(const folly::IOBuf *buf) {
     std::shared_ptr<MsgT> deserializedMsg = std::make_shared<MsgT>();
     deserializeActorMsg<MsgT, ProtocolT>(buf, *deserializedMsg);
     return deserializedMsg;
 }
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolReader>
-void deserializeActorMsg(const folly::IOBuf *buf, MsgT &deserializedMsg) {
+inline void deserializeActorMsg(const folly::IOBuf *buf, MsgT &deserializedMsg) {
     ProtocolT reader;
     reader.setInput(buf);
     deserializedMsg.read(&reader);
 }
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolWriter>
-void toIOBuf(const ActorMsg &msg, std::unique_ptr<folly::IOBuf> &buf) {
+inline void toIOBuf(const ActorMsg &msg, std::unique_ptr<folly::IOBuf> &buf) {
     serializeActorMsg<MsgT, ProtocolT>(*(std::static_pointer_cast<MsgT>(msg.second)), buf);
 }
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolReader>
-void toActorMsg(const std::unique_ptr<folly::IOBuf> &buf, ActorMsg &msg) {
+inline void toActorMsg(const std::unique_ptr<folly::IOBuf> &buf, ActorMsg &msg) {
     std::shared_ptr<MsgT> deserializedMsg = std::make_shared<MsgT>();
     deserializeActorMsg<MsgT, ProtocolT>(buf.get(), *deserializedMsg);
     msg.second = deserializedMsg;

@@ -56,7 +56,19 @@ enum ActorMsgTypes {
     GetActorRegistryMsg		= 3,
     GetActorRegistryRespMsg	= 4,
     UpdateActorRegistryMsg	= 5,
+    UpdateActorInfoMsg		= 6,
     COMMON_MSG_END		= 999,
+    CONFIG_MSG_BEGIN 		= 1000,
+    RegisterActorSystemMsg 	= 1001,
+    RegisterActorSystemRespMsg 	= 1002,
+    CONFIG_MSG_END 		= 1999,
+    DATAACESS_MSG_BEGIN 	= 2000,
+    AddVolumeMsg 		= 2001,
+    PutObjectMsg		= 2002,
+    PutObjectRespMsg		= 2003,
+    GetObjectMsg		= 2004,
+    GetObjectRespMsg		= 2005,
+    DATAACESS_MSG_END 		= 2999,
 }
 
 struct GetActorRegistry {
@@ -67,16 +79,11 @@ typedef list<ActorInfo> GetActorRegistryResp
 struct UpdateActorRegistry {
 }
 
+typedef ActorInfo UpdateActorInfo
+
 /*-----------------------------------------------------------
  * Config messages 
  *-----------------------------------------------------------*/
-enum ConfigMsgTypes {
-    CONFIG_MSG_BEGIN 		= 1000,
-    RegisterActorSystemMsg 	= 1001,
-    RegisterActorSystemRespMsg 	= 1002,
-    CONFIG_MSG_END 		= 1999,
-}
-
 struct RegisterActorSystem {
     1: ActorInfo		systemInfo;
 }

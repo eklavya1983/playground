@@ -16,18 +16,17 @@ struct ConfigServiceActor : ActorSystem {
     }
 
 protected:
-    virtual void initSerializers_() override {
-        ActorSystem::initSerializers_();
-        MAP_SERAILIZER(ConfigMsgTypes::RegisterActorSystemMsg, RegisterActorSystem);
-    }
-
     virtual void initBehavior_() override {
         ActorSystem::initBehavior_();
 
         functionalBehavior_ += {
             on(ConfigMsgTypes::RegisterActorSystemMsg) >> [this](ActorMsg &&msg) {
-                handleRegisterServiceMsg_(std::move(msg));
-            },
+                auto &payloadPtr = msgPayloadPtr<RegisterActorSystem>(msg);
+                updateActorRegistry_(payloadPtr->systemInfo);
+                // TODO: Broadcast
+                auto resp = std::make_shared<RegisterActorSystemResp>();
+                reply(msg, ConfigMsgTypes::RegisterActorSystemRespMsg, resp);
+            }
         };
     }
 

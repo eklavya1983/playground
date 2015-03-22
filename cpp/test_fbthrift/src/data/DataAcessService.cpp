@@ -15,13 +15,13 @@ struct DataAccessServiceActor : ActorSystem {
     {
     }
 
- protected:
-    virtual void initSerializers_() override {
-        ActorSystem::initSerializers_();
-
-        MAP_SERAILIZER(DataAcessMsgTypes::AddVolumeMsg, AddVolume);
+    static void initSerializers()
+    {
+        ActorSystem::initSerializers();
+        MAP_SERAILIZER(ActorMsgTypes::AddVolumeMsg, AddVolume);
     }
 
+ protected:
     virtual void initBehavior_() override {
         ActorSystem::initBehavior_();
 

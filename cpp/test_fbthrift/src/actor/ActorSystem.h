@@ -15,6 +15,8 @@ struct ActorSystem : NotificationQueueActor {
                 const std::string &configIp,
                 int configPort);
     virtual ~ActorSystem();
+    static void initSerializers();
+
     virtual void init() override;
 
     /**
@@ -66,17 +68,23 @@ struct ActorSystem : NotificationQueueActor {
     void handleInitMsg(ActorMsg &&msg);
     void handleUpdateActorTableMsg(ActorMsg &&msg);
 
+    const static LocalActorId ROOT_ACTOR_LOCAL_ID = 0;
+    const static ActorId      CONFIG_ACTOR_ID;
+
  protected:
     virtual void initBehaviors_() override;
-    virtual void initSerializers_();
-
-    void register_();
+    virtual void createRemoteActor_(const ActorInfo &info);
+    void updateActorRegistry_(const ActorInfo &info, bool createActor);
+    void initConfigRemoteActor_();
+    void sendRegisterMsg_();
     
     ActorSystemId                       systemId_;
     std::atomic<LocalActorId>           nextLocalActorId_;
     using ActorTbl =                    folly::AtomicHashMap<int64_t, ActorPtr>;
     using ActorTblPtr =                 std::unique_ptr<ActorTbl>;
+    using ActorRegistry =               std::unordered_map<int64_t, ActorInfo>;
     ActorTblPtr                         actorTbl_;
+    ActorRegistry                       actorRegistry_; 
     ActorServerPtr                      server_;
 
 

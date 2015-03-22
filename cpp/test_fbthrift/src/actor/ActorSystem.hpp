@@ -7,8 +7,8 @@ using namespace cpp2;
 
 template<class ActorT, class ... ArgsT>
 ActorPtr ActorSystem::spawnRootActor(ArgsT&&... args) {
-    assert(nextLocalActorId_ == 0);
-    assert(actorTbl_->size() == 0);
+    CHECK(nextLocalActorId_ == 0);
+    CHECK(actorTbl_->size() == 0);
     return spawnActor<ActorT>(std::forward<ArgsT>(args)...);
 }
 
@@ -17,7 +17,7 @@ ActorPtr ActorSystem::spawnActor(ArgsT&&... args)
 {
     ActorId id;
 
-    ActorPtr a = std::make_shared<ActorT>(&eventBase_, std::forward<ArgsT>(args)...);
+    ActorPtr a = std::make_shared<ActorT>(this, &eventBase_, std::forward<ArgsT>(args)...);
     id.systemId = systemId_;
     id.localId = nextLocalActorId_++;
     a->setId(id);
