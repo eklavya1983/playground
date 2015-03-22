@@ -38,4 +38,5 @@ add_library(actor
 	ServiceHandle.cpp
 	${thrift_gen_sources}
 	ActorServer.cpp
+	RemoteActor.cpp
 	)

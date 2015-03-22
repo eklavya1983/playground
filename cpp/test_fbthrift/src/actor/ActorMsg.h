@@ -41,5 +41,17 @@ void deserializeActorMsg(const folly::IOBuf *buf, MsgT &deserializedMsg) {
     deserializedMsg.read(&reader);
 }
 
+template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolWriter>
+void toIOBuf(const ActorMsg &msg, std::unique_ptr<folly::IOBuf> &buf) {
+    serializeActorMsg<MsgT, ProtocolT>(*(std::static_pointer_cast<MsgT>(msg.second)), buf);
+}
+
+template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolReader>
+void toActorMsg(const std::unique_ptr<folly::IOBuf> &buf, ActorMsg &msg) {
+    std::shared_ptr<MsgT> deserializedMsg = std::make_shared<MsgT>();
+    deserializeActorMsg<MsgT, ProtocolT>(buf.get(), *deserializedMsg);
+    msg.second = deserializedMsg;
+}
+
 }  // namesapce actor
 

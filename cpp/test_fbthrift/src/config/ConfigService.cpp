@@ -1,4 +1,3 @@
-#include <actor/gen-cpp2/ConfigApi.h>
 #include <actor/gen-cpp2/Service_constants.h>
 #include <actor/ActorSystem.hpp>
 
@@ -8,19 +7,33 @@ namespace config {
 using namespace actor;
 using namespace actor::cpp2;
 
-struct ConfigServiceActor : NotificationQueueActor {
-    explicit ConfigServiceActor(folly::EventBase *eventBase)
-    : NotificationQueueActor(eventBase)
+struct ConfigServiceActor : ActorSystem {
+    ConfigServiceActor(int myPort,
+                const std::string &configIp,
+                int configPort)
+    : ActorSystem(myPort, configIp, configPort)
     {
+    }
+
+protected:
+    virtual void initSerializers_() override {
+        ActorSystem::initSerializers_();
+        MAP_SERAILIZER(ConfigMsgTypes::RegisterActorSystemMsg, RegisterActorSystem);
+    }
+
+    virtual void initBehavior_() override {
+        ActorSystem::initBehavior_();
+
         functionalBehavior_ += {
-            on(ConfigMsgTypes::RegisterServiceMsg) >> [this](ActorMsg &&msg) {
-                handleRegisterServiceMsg(std::move(msg));
-            }
+            on(ConfigMsgTypes::RegisterActorSystemMsg) >> [this](ActorMsg &&msg) {
+                handleRegisterServiceMsg_(std::move(msg));
+            },
         };
     }
 
-    void handleRegisterServiceMsg(ActorMsg &&msg) {
+    void handleRegisterServiceMsg_(ActorMsg &&msg) {
         std::cout << "handleRegisterServiceMsg called";
+        assert(!"Unimplemented");
     }
 
     Behavior behavior_;

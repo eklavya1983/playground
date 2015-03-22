@@ -3,6 +3,8 @@
 #include <actor/ActorServer.h>
 
 namespace actor {
+/* Static declarations */
+ServiceHandler::SerializerTbl ServiceHandler::actorMsgSerializerTbl_;
 
 ServiceHandler::ServiceHandler(ActorSystem *system) {
    system_ = system; 

@@ -19,7 +19,10 @@ using ActorHandlerF = std::function<void (ActorMsg &&)>;
 // using Behavior = std::unordered_map<ActorMsgType, ActorHandlerF>;
 
 struct Actor {
+    /* Lifecycle */
     Actor();
+    virtual ~Actor();
+    virtual void init();
 
     void setId(const ActorId &id);
     ActorId getId() const;
@@ -31,8 +34,13 @@ struct Actor {
 
     virtual void dropMessage(ActorMsg &&msg) = 0;
     virtual void deferMessage(ActorMsg &&msg) = 0;
+    
+    // template <class T>
+    // void reply(const ActorMsg &origMsg, std::shared_ptr<T> paylaod) {}
 
 protected:
+    virtual void initBehaviors_();
+
     ActorId                             id_;
     /* Behaviors */
     Behavior                            initBehavior_;
@@ -49,6 +57,7 @@ using ActorQueue = folly::NotificationQueue<ActorMsg>;
 struct NotificationQueueActor : Actor, ActorQueue::Consumer {
     NotificationQueueActor();
     explicit NotificationQueueActor(folly::EventBase *eventBase);
+    virtual void init() override;
     
     void setEventBase(folly::EventBase *eventBase);
     virtual void send(ActorMsg &&msg) override;

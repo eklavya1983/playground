@@ -8,6 +8,40 @@ ActorSystem::ActorSystem(int myPort,
                          int configPort)
     : NotificationQueueActor()
 {
+    // TODO: Revisit setting event base here
+    setEventBase(&eventBase_);
+    server_.reset(new ReplicaActorServer(this, myPort)); 
+}
+
+ActorSystem::~ActorSystem()
+{
+    server_->stop();
+    eventBase_.terminateLoopSoon();
+}
+
+void ActorSystem::init() {
+    NotificationQueueActor::init();
+
+    initSerializers_();
+
+    server_->start();
+
+    register_();
+}
+
+void ActorSystem::initSerializers_()
+{
+    MAP_SERAILIZER(ActorMsgTypes::GetActorRegistryMsg, GetActorRegistry);
+}
+
+void ActorSystem::initBehaviors_()
+{
+    NotificationQueueActor::initBehaviors_();
+    functionalBehavior_ += {
+        on(ActorMsgTypes::GetActorRegistryMsg) >> [this](ActorMsg &&msg) {
+            /// reply(msg, getActorRegistry());  
+        }
+    };
 #if 0
     ACTORMSGHANDLER(initBehavior_,
                     ActorMsgTypes::InitMsg,
@@ -21,21 +55,6 @@ ActorSystem::ActorSystem(int myPort,
                     ActorSystem::handleUpdateActorTableMsg)
 #endif
 
-    // TODO: Revisit setting event base here
-    setEventBase(&eventBase_);
-    server_.reset(new ReplicaActorServer(this, myPort)); 
-}
-
-ActorSystem::~ActorSystem()
-{
-    server_->stop();
-    eventBase_.terminateLoopSoon();
-}
-
-void ActorSystem::init()
-{
-    server_->start();
-    register_();
 }
 
 void ActorSystem::register_()

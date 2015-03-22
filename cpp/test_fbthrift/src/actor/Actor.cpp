@@ -4,6 +4,16 @@ namespace actor {
 
 Actor::Actor() {
     currentBehavior_ = nullptr;
+}
+
+Actor::~Actor() {
+}
+
+void Actor::init() {
+    initBehaviors_();
+}
+
+void Actor::initBehaviors_() {
     initBehavior_ = {
         on(ActorMsgTypes::OtherMsg) >> [this](ActorMsg &&m) {
             dropMessage(std::move(m));
@@ -25,6 +35,7 @@ Actor::Actor() {
         }
     };
 }
+
 
 void Actor::setId(const ActorId &id)
 {
@@ -49,6 +60,10 @@ NotificationQueueActor::NotificationQueueActor() {
 
 NotificationQueueActor::NotificationQueueActor(folly::EventBase *eventBase) {
     setEventBase(eventBase);
+}
+
+void NotificationQueueActor::init() {
+    Actor::init();
 }
 
 void NotificationQueueActor::setEventBase(folly::EventBase *eventBase) {

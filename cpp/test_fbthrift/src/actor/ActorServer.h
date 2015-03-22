@@ -3,6 +3,10 @@
 #include <string>
 #include <thrift/lib/cpp/util/ScopedServerThread.h>
 #include <actor/gen-cpp2/ServiceApi.h>
+#include <actor/ActorMsg.h>
+
+#define MAP_SERAILIZER(enumType, msgType) \
+    ServiceHandler::addActorMsgSerializer<msgType>(static_cast<ActorMsgType>(enumType))
 
 namespace actor {
 
@@ -15,12 +19,25 @@ struct ActorSystem;
 * @brief Thrift cpp2 handler for handling async requests
 */
 struct ServiceHandler : ::actor::cpp2::ServiceApiSvIf {
+    /* Typedefs */
+    using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
+    using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
+    using SerializerTbl = std::unordered_map<ActorMsgType, std::pair<SerializerF, DeserializerF>>;
+
     explicit ServiceHandler(ActorSystem *system);
     virtual void actorMessage(std::unique_ptr<ActorMsgHeader> header,
                               std::unique_ptr<folly::IOBuf> payload) override;
     virtual void replicaRequest(std::unique_ptr<ReplicaRequestHeader> header,
                                 std::unique_ptr<std::string> payload) override;
+    template <class MsgT>
+    static void addActorMsgSerializer(ActorMsgType type) {
+        actorMsgSerializerTbl_[type] = {&toIOBuf<MsgT>, &toActorMsg<MsgT>};
+    }
+    inline static SerializerTbl& getSerializerTbl() {return actorMsgSerializerTbl_;}
+
  protected:
+    static SerializerTbl actorMsgSerializerTbl_;
+
     ActorSystem *system_;
 };
 

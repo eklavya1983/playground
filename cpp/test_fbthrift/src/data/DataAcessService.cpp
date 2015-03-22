@@ -1,4 +1,3 @@
-#include <actor/gen-cpp2/ConfigApi.h>
 #include <actor/gen-cpp2/Service_constants.h>
 #include <actor/ActorSystem.hpp>
 
@@ -8,21 +7,35 @@ namespace data {
 using namespace actor;
 using namespace actor::cpp2;
 
-struct DataAccessServiceActor : NotificationQueueActor {
-    explicit DataAccessServiceActor(folly::EventBase *eventBase)
-    : NotificationQueueActor(eventBase)
+struct DataAccessServiceActor : ActorSystem {
+    explicit DataAccessServiceActor(int myPort,
+                const std::string &configIp,
+                int configPort)
+    : ActorSystem(myPort, configIp, configPort)
     {
+    }
+
+ protected:
+    virtual void initSerializers_() override {
+        ActorSystem::initSerializers_();
+
+        MAP_SERAILIZER(DataAcessMsgTypes::AddVolumeMsg, AddVolume);
+    }
+
+    virtual void initBehavior_() override {
+        ActorSystem::initBehavior_();
+
         functionalBehavior_ += {
             on(DataAcessMsgTypes::AddVolumeMsg) >> [this](ActorMsg &&msg) {
-                handleAddVolumeMsg(std::move(msg));
+                handleAddVolumeMsg_(std::move(msg));
             }
         };
     }
     
-    void handleInitMsg(ActorMsg &&msg) {
+    void handleInitMsg_(ActorMsg &&msg) {
     }
 
-    void handleAddVolumeMsg(ActorMsg &&msg) {
+    void handleAddVolumeMsg_(ActorMsg &&msg) {
     }
 
 };

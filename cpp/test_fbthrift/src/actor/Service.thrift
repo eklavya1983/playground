@@ -33,10 +33,12 @@ struct ReplicaRequestHeader {
     3: i32 			version;
 }
 
-struct ServiceInfo {
-    1: string 			ip;
-    2: i32 			port;
-    3: string 			type; 
+struct ActorInfo {
+    1: string			type;
+    2: ActorId			id; 
+    3: string			ip; 
+    4: i32			port;
+    5: i32			incarnation;
 }
 
 service ServiceApi {
@@ -50,8 +52,19 @@ service ServiceApi {
 enum ActorMsgTypes {
     COMMON_MSG_BEGIN		= 0,
     OtherMsg			= 1,
-    UpdateActorTableMsg		= 2,
+    InitMsg			= 2,
+    GetActorRegistryMsg		= 3,
+    GetActorRegistryRespMsg	= 4,
+    UpdateActorRegistryMsg	= 5,
     COMMON_MSG_END		= 999,
+}
+
+struct GetActorRegistry {
+}
+
+typedef list<ActorInfo> GetActorRegistryResp
+
+struct UpdateActorRegistry {
 }
 
 /*-----------------------------------------------------------
@@ -59,12 +72,15 @@ enum ActorMsgTypes {
  *-----------------------------------------------------------*/
 enum ConfigMsgTypes {
     CONFIG_MSG_BEGIN 		= 1000,
-    RegisterServiceMsg 		= 1001,
+    RegisterActorSystemMsg 	= 1001,
+    RegisterActorSystemRespMsg 	= 1002,
     CONFIG_MSG_END 		= 1999,
 }
 
-struct RegisterService {
-    1: ServiceInfo info;
+struct RegisterActorSystem {
+    1: ActorInfo		systemInfo;
+}
+struct RegisterActorSystemResp {
 }
 
 /*-----------------------------------------------------------
@@ -73,6 +89,10 @@ struct RegisterService {
 enum DataAcessMsgTypes {
     DATAACESS_MSG_BEGIN 	= 2000,
     AddVolumeMsg 		= 2001,
+    PutObjectMsg		= 2002,
+    PutObjectRespMsg		= 2003,
+    GetObjectMsg		= 2004,
+    GetObjectRespMsg		= 2005,
     DATAACESS_MSG_END 		= 2999,
 }
 
@@ -80,6 +100,14 @@ struct AddVolume {
     1: ReplicaGroupInfo 	replicaInfo;
     2: i64			volumeId;
     3: string 			volumeName;
+}
+struct PutObject {
+}
+struct PutObjectResp {
+}
+struct GetObject {
+}
+struct GetObjectResp {
 }
 
 service TestService {

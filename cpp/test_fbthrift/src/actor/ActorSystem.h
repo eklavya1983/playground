@@ -10,15 +10,12 @@
 namespace actor {
 
 struct ActorSystem : NotificationQueueActor {
+    /* Life cycle */
     ActorSystem(int myPort,
                 const std::string &configIp,
                 int configPort);
     virtual ~ActorSystem();
-
-    /**
-    * @brief Initialize actor system
-    */
-    void init();
+    virtual void init() override;
 
     /**
     * @brief Spawn root actor
@@ -70,6 +67,9 @@ struct ActorSystem : NotificationQueueActor {
     void handleUpdateActorTableMsg(ActorMsg &&msg);
 
  protected:
+    virtual void initBehaviors_() override;
+    virtual void initSerializers_();
+
     void register_();
     
     ActorSystemId                       systemId_;
