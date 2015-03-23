@@ -11,7 +11,8 @@ namespace actor {
 
 struct ActorSystem : NotificationQueueActor {
     /* Life cycle */
-    ActorSystem(int myPort,
+    ActorSystem(const std::string &systemType,
+                int myPort,
                 const std::string &configIp,
                 int configPort);
     virtual ~ActorSystem();
@@ -67,17 +68,30 @@ struct ActorSystem : NotificationQueueActor {
     void handleInitMsg(ActorMsg &&msg);
     void handleUpdateActorTableMsg(ActorMsg &&msg);
 
-    const static LocalActorId ROOT_ACTOR_LOCAL_ID = 0;
-    const static ActorId      CONFIG_ACTOR_ID;
+    inline static const ActorId& configActorId() {
+        const static ActorId configId(apache::thrift::FRAGILE, 1, 1);
+        return configId;
+    }
+    inline static const ActorId& invalidActorId() {
+        const static ActorId invalidId(apache::thrift::FRAGILE, 0, 0);
+        return invalidId;
+    }
+    inline static bool isActorSystemId(const ActorId &id) {
+        return id.localId == LOCALID_START;
+    }
+    static const LocalActorId LOCALID_START = 0;
+
 
  protected:
     virtual void initBehaviors_() override;
-    virtual void createRemoteActor_(const ActorInfo &info);
-    void updateActorRegistry_(const ActorInfo &info, bool createActor);
+    virtual ActorPtr createRemoteActor_(const ActorInfo &info);
+    virtual Error updateActorRegistry_(const ActorInfo &info, bool createActor);
     void initConfigRemoteActor_();
     void sendRegisterMsg_();
     
-    ActorSystemId                       systemId_;
+    ActorInfo                           systemInfo_;
+    std::string                         configIp_;
+    int                                 configPort_;
     std::atomic<LocalActorId>           nextLocalActorId_;
     using ActorTbl =                    folly::AtomicHashMap<int64_t, ActorPtr>;
     using ActorTblPtr =                 std::unique_ptr<ActorTbl>;
@@ -85,8 +99,6 @@ struct ActorSystem : NotificationQueueActor {
     ActorTblPtr                         actorTbl_;
     ActorRegistry                       actorRegistry_; 
     ActorServerPtr                      server_;
-
-
     // TODO: Event base management
     folly::EventBase                    eventBase_;
 };

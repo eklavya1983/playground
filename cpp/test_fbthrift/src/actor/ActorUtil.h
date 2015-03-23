@@ -13,7 +13,11 @@ inline int64_t toInt64(const ActorId &id) {
 
 template <class T>
 inline T& operator << (T &stream, const ActorInfo &info) {
-    stream << "ip: " << info.ip << " port: " << info.port;
+    stream << "type: " << info.type
+        << " id: " << info.id
+        << "ip: " << info.ip
+        << " port: " << info.port
+        << " incarnation: " << info.incarnation;
 }
 
 template <class T>

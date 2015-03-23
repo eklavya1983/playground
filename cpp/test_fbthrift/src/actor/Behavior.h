@@ -11,7 +11,7 @@ namespace actor {
 
 using namespace cpp2;
 
-using BehaviorHandler = std::function<void (ActorMsg&&)>;
+using BehaviorHandler = std::function<void ()>;
 
 struct BehaviorItem {
     ActorMsgTypeId typeId;
@@ -48,8 +48,8 @@ struct Behavior {
         }
     }
 
-    inline void handle(ActorMsg &&msg) {
-        auto handlerItr = handlers_.find(actorMsgTypeId(msg));
+    inline void handle(const ActorMsgTypeId &typeId) {
+        auto handlerItr = handlers_.find(typeId);
         if (handlerItr == handlers_.end()) {
             handlerItr = handlers_.find(ActorMsgTypeInfo<Other>::typeId);
             if (handlerItr == handlers_.end()) {
@@ -58,7 +58,7 @@ struct Behavior {
                 return;
             }
         }
-        (handlerItr->second)(std::move(msg));
+        (handlerItr->second)();
     }
  protected:
     std::unordered_map<ActorMsgTypeId, BehaviorHandler> handlers_;

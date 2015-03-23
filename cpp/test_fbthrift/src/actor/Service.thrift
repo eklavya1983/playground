@@ -45,7 +45,13 @@ service ServiceApi {
     oneway void replicaRequest(1: ReplicaRequestHeader header, 2: binary payload);
     oneway void actorMessage(1: ActorMsgHeader header, 2: ActorMsgBuffer payload);
 }
-
+/*-----------------------------------------------------------
+ * Errors
+ *-----------------------------------------------------------*/
+enum Error {
+    ERR_OK			= 0,
+    ERR_INVALID			= 1
+}
 /*-----------------------------------------------------------
  * Common actor messages 
  *-----------------------------------------------------------*/
@@ -62,8 +68,8 @@ enum ActorMsgTypeIds {
     COMMON_MSG_END		= 999,
 
     CONFIG_MSG_BEGIN 		= 1000,
-    RegisterActorSystemMsg 	= 1001,
-    RegisterActorSystemRespMsg 	= 1002,
+    RegisterMsg 		= 1001,
+    RegisterRespMsg 		= 1002,
     CONFIG_MSG_END 		= 1999,
 
     DATAACESS_MSG_BEGIN 	= 2000,
@@ -95,10 +101,12 @@ struct UpdateActorInfo {
 /*-----------------------------------------------------------
  * Config messages 
  *-----------------------------------------------------------*/
-struct RegisterActorSystem {
+struct Register {
     1: ActorInfo		systemInfo;
 }
-struct RegisterActorSystemResp {
+struct RegisterResp {
+    1: i32			error;
+    2: ActorId			id;
 }
 
 /*-----------------------------------------------------------

@@ -20,16 +20,16 @@ struct DataAccessServiceActor : ActorSystem {
         ActorSystem::initBehavior_();
 
         functionalBehavior_ += {
-            on(AddVolume) >> [this](ActorMsg &&msg) {
-                handleAddVolumeMsg_(std::move(msg));
+            on(AddVolume) >> [this]() {
+                handleAddVolumeMsg_();
             }
         };
     }
     
-    void handleInitMsg_(ActorMsg &&msg) {
+    void handleInitMsg_() {
     }
 
-    void handleAddVolumeMsg_(ActorMsg &&msg) {
+    void handleAddVolumeMsg_() {
     }
 
 };

@@ -18,25 +18,37 @@ struct Actor {
     virtual void init();
 
     void setId(const ActorId &id);
-    ActorId getId() const;
+    inline const ActorId& myId() const {return myId_;}
 
     virtual void changeBhavior(Behavior *behavior);
 
     virtual void send(ActorMsg &&msg) = 0;
     virtual void handle(ActorMsg &&msg);
 
-    virtual void dropMessage(ActorMsg &&msg) = 0;
-    virtual void deferMessage(ActorMsg &&msg) = 0;
+    virtual void dropMsg() = 0;
+    virtual void deferMsg() = 0;
 
     template <class MsgT>
-    void reply(const ActorMsg& msg, Payload &&payload);
-    
+    void reply(Payload &&payload);
+
+    inline ActorMsg* msg() {return curMsg_;}
+    inline const ActorMsgTypeId& msgTypeId() const {return curMsg_->first.typeId;}
+    inline const ActorId& from() const {return curMsg_->first.from;}
+    inline const ActorId& to() const {return curMsg_->first.from;}
+    inline const RequestId& requestId() const {return curMsg_->first.requestId;}
+    template <class T>
+    inline T& msgPayload() {
+        return *(reinterpret_cast<T*>(curMsg_->second.get()));
+    }
 protected:
     virtual void initBehaviors_();
 
+
     ActorSystem                         *system_;
-    ActorId                             id_;
+    ActorId                             myId_;
     std::string                         strId_;
+    /* Message related */
+    ActorMsg                            *curMsg_;
     /* Behaviors */
     Behavior                            initBehavior_;
     Behavior                            functionalBehavior_;
@@ -58,8 +70,8 @@ struct NotificationQueueActor : Actor, ActorQueue::Consumer {
     virtual void send(ActorMsg &&msg) override;
     virtual void messageAvailable(ActorMsg &&msg) override;
 
-    virtual void dropMessage(ActorMsg &&msg) override;
-    virtual void deferMessage(ActorMsg &&msg) override;
+    virtual void dropMsg() override;
+    virtual void deferMsg() override;
 
  protected:
     ActorQueue queue_;

@@ -1,15 +1,27 @@
-#include <actor/ActorSystem.h>
+#include <actor/ActorSystem.hpp>
 #include <actor/ActorUtil.h>
 #include <actor/RemoteActor.h>
 #include <util/Log.h>
 
 namespace actor {
 
-ActorSystem::ActorSystem(int myPort,
+ActorSystem::ActorSystem(const std::string &systemType,
+                         int myPort,
                          const std::string &configIp,
                          int configPort)
     : NotificationQueueActor(nullptr)
 {
+    systemInfo_.type = systemType;
+    systemInfo_.id = invalidActorId();
+    // TODO: Detect your ip here
+    systemInfo_.ip = "127.0.0.1";
+    systemInfo_.port = myPort;
+    // TODO: Set this on restarts
+    systemInfo_.incarnation = 1;
+    configIp_ = configIp_;
+    configPort_ = configPort;
+    nextLocalActorId_ = LOCALID_START;
+
     // TODO: Revisit setting event base here
     setEventBase(&eventBase_);
     server_.reset(new ReplicaActorServer(this, myPort)); 
@@ -22,80 +34,102 @@ ActorSystem::~ActorSystem()
 }
 
 void ActorSystem::init() {
-    NotificationQueueActor::init();
 
+    // TODO: start the server
     server_->start();
-    // TODO: send init message
+    NotificationQueueActor::init();
 }
 
 void ActorSystem::initBehaviors_()
 {
     NotificationQueueActor::initBehaviors_();
     initBehavior_ += {
-        on(Init) >> [this](ActorMsg &&msg) {
+        on(Init) >> [this]() {
             initConfigRemoteActor_();
             sendRegisterMsg_();
         },
-        on(RegisterActorSystemResp) >> [this](ActorMsg &&msg) {
+        on(RegisterResp) >> [this]() {
+            auto &payload = msgPayload<RegisterResp>();
+            setId(payload.id);
+            systemInfo_.id = payload.id;
+            ALog(INFO) << "Registration complete: " << systemInfo_;
             changeBhavior(&functionalBehavior_);
         }
     };
     functionalBehavior_ += {
-        on(GetActorRegistry) >> [this](ActorMsg &&msg) {
+        on(GetActorRegistry) >> [this]() {
             /// reply(msg, getActorRegistry());  
         }
     };
-#if 0
-    ACTORMSGHANDLER(initBehavior_,
-                    ActorMsgTypeIds::InitMsg,
-                    ActorSystem::handleInitMsg)
-    ACTORMSGHANDLER(initBehavior_,
-                    ActorMsgTypeIds::RegistrationRespMsg,
-                    ActorSystem::handleRegistrationRespMsg)
-    
-    ACTORMSGHANDLER(functionalBehavior_,
-                    ActorMsgTypeIds::UpdateActorTableMsg,
-                    ActorSystem::handleUpdateActorTableMsg)
-#endif
-
 }
 
-void ActorSystem::createRemoteActor_(const ActorInfo &info) {
+ActorPtr ActorSystem::createRemoteActor_(const ActorInfo &info) {
     DCHECK(getEventBase()->isInEventBaseThread());
-    CHECK(info.id.systemId == ROOT_ACTOR_LOCAL_ID);
+    // CHECK(info.id.systemId == ROOT_ACTOR_LOCAL_ID);
     CHECK(lookUpActor(info.id) == nullptr);
     
     ALog(INFO) << info;
 
-    ActorPtr a = std::make_shared<RemoteActor>(this, &eventBase_, info);
-    a->setId(info.id);
-    actorTbl_->insert(std::make_pair(toInt64(info.id), a));
+    ActorPtr actor = std::make_shared<RemoteActor>(this, &eventBase_, info);
+    actor->setId(info.id);
+    actorTbl_->insert(std::make_pair(toInt64(info.id), actor));
+
+    auto payload = std::make_shared<UpdateActorInfo>();
+    payload->info = info;
+    actor->send(
+        makeActorMsg<UpdateActorInfo>(myId(), info.id, std::move(payload)));
+
+    return actor;
 }
 
-void ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor) {
+Error ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor) {
     DCHECK(getEventBase()->isInEventBaseThread());
-    actorRegistry_[toInt64(info.id)] = info;
+    /* For now we only expect updateActorRegistry_() for actor systems that are remote */
+    CHECK(isActorSystemId(info.id));
+
+    /* Update registry with incoming actor registry info */
+    auto entry = actorRegistry_.find(toInt64(info.id));
+    if (entry == actorRegistry_.end()) {
+        actorRegistry_[toInt64(info.id)] = info;
+    } else {
+        if (info.incarnation < entry->second.incarnation) {
+            return Error::ERR_INVALID;
+        }
+        entry->second = info;
+    }
 
     auto actor = lookUpActor(info.id);
-    if (createActor && !actor) {
-        createRemoteActor_(info);
-    }
     if (actor) {
+        /* For existing remote actor send a message to update connection */
         auto payload = std::make_shared<UpdateActorInfo>();
         payload->info = info;
         actor->send(
-            makeActorMsg<UpdateActorInfo>(id_, info.id, std::move(payload)));
+            makeActorMsg<UpdateActorInfo>(myId(), info.id, std::move(payload)));
+    } else if (createActor) {
+        /* Create new remote actor if requested */
+        createRemoteActor_(info);
     }
+    return Error::ERR_OK;
 }
 
-void ActorSystem::sendRegisterMsg_()
-{
-    CHECK(false) << "Not implemented";
+void ActorSystem::sendRegisterMsg_() {
+    ALog(INFO) << "Sending registration message";
+
+    auto payload = std::make_shared<Register>();
+    payload->systemInfo = systemInfo_;
+    auto msg = makeActorMsg<Register>(myId(), configActorId(), payload);
+    // TODO: Check how routeToActor() is working here
+    routeToActor(std::move(msg));
 }
 
 void ActorSystem::initConfigRemoteActor_()
 {
-    CHECK(false) << "Not implemented";
+    createRemoteActor_(ActorInfo(apache::thrift::FRAGILE,
+                                 "config",
+                                 configActorId(),
+                                 configIp_,
+                                 configPort_,
+                                 0));
 }
 
 ActorPtr ActorSystem::lookUpActor(const ActorId &id)

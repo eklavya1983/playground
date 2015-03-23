@@ -109,5 +109,9 @@ inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
     return msg;
 }
 
+template <class MsgT>
+inline ActorMsg makeActorMsg() {
+    return makeActorMsg<MsgT>(ActorId(), ActorId(), nullptr);
+}
 }  // namesapce actor
 

@@ -1,10 +1,15 @@
+#include <util/Log.h>
+#include <actor/ActorUtil.h>
 #include <actor/Actor.h>
+#include <actor/ActorSystem.h>
 #include <sstream>
 
 namespace actor {
 
-Actor::Actor(ActorSystem *system) {
+Actor::Actor(ActorSystem *system)
+{
     system_ = system;
+    myId_ = ActorSystem::invalidActorId();
     currentBehavior_ = nullptr;
 }
 
@@ -12,45 +17,41 @@ Actor::~Actor() {
 }
 
 void Actor::init() {
+    ALog(INFO);
     initBehaviors_();
+    send(makeActorMsg<Init>());
 }
 
 void Actor::initBehaviors_() {
     initBehavior_ = {
-        on(Other) >> [this](ActorMsg &&m) {
-            dropMessage(std::move(m));
+        on(Other) >> [this]() {
+            dropMsg();
         }
     };
     functionalBehavior_ = {
-        on(Other) >> [this](ActorMsg &&m) {
-            dropMessage(std::move(m));
+        on(Other) >> [this]() {
+            dropMsg();
         }
     };
     stoppedBehavior_ = {
-        on(Other) >> [this](ActorMsg &&m) {
-            dropMessage(std::move(m));
+        on(Other) >> [this]() {
+            dropMsg();
         }
     };
     inErrBehavior_ = {
-        on(Other) >> [this](ActorMsg &&m) {
-            dropMessage(std::move(m));
+        on(Other) >> [this]() {
+            dropMsg();
         }
     };
 }
 
+void Actor::setId(const ActorId &id) {
+    myId_ = id;
 
-void Actor::setId(const ActorId &id)
-{
-    id_ = id;
-
+    /* Set the string used for logging as well */
     std::stringstream ss;
     ss << "[" << id.systemId << ":" << id.localId << "]";
     strId_ = ss.str();
-}
-
-ActorId Actor::getId() const
-{
-    return id_;
 }
 
 void Actor::changeBhavior(Behavior *behavior) {
@@ -58,7 +59,15 @@ void Actor::changeBhavior(Behavior *behavior) {
 }
 
 void Actor::handle(ActorMsg &&msg) {
-    currentBehavior_->handle(std::move(msg));
+    /* Cache current message.  This cached message is used in all the behavior
+     * handlers
+     */
+    curMsg_ = &msg;
+
+    CHECK(to() == myId());
+    currentBehavior_->handle(actorMsgTypeId(msg));
+
+    curMsg_ = nullptr;
 }
 
 NotificationQueueActor::NotificationQueueActor(ActorSystem *system,
@@ -84,12 +93,12 @@ void NotificationQueueActor::messageAvailable(ActorMsg &&msg) {
     handle(std::move(msg));
 }
 
-void NotificationQueueActor::dropMessage(ActorMsg &&msg) {
-    assert(!"TODO: Implemented");
+void NotificationQueueActor::dropMsg() {
+    CHECK(!"TODO: Implemented");
 }
 
-void NotificationQueueActor::deferMessage(ActorMsg &&msg) {
-    assert(!"TODO: Implemented");
+void NotificationQueueActor::deferMsg() {
+    CHECK(!"TODO: Implemented");
 }
 
 }  // namespace actor

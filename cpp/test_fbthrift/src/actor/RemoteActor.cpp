@@ -14,7 +14,9 @@ RemoteActor::RemoteActor(ActorSystem *system,
                          const ActorInfo &info)
 : NotificationQueueActor(system, eventBase)
 {
+    // TODO: Check if info is necessary
     info_ = info;    
+    // TODO: Move this into init
     // TODO: Handle socket errors
     std::shared_ptr<TAsyncSocket> socket(
         TAsyncSocket::newSocket(eventBase, info.ip, info.port));
@@ -28,13 +30,13 @@ RemoteActor::~RemoteActor() {
 
 void RemoteActor::initBehaviors_() {
     functionalBehavior_ += {
-        on(Other) >> [this](ActorMsg &&m) {
+        on(Other) >> [this]() {
             /* serialize */
             std::unique_ptr<folly::IOBuf> buf;
-            auto &msgSerializerF = gMsgMapTbl->at(m.first.typeId).first;
-            msgSerializerF(m, buf);
+            auto &msgSerializerF = gMsgMapTbl->at(msgTypeId()).first;
+            msgSerializerF(*msg(), buf);
             /* send the message */
-            client_->actorMessage([](ClientReceiveState&& state) {}, m.first, *buf);
+            client_->actorMessage([](ClientReceiveState&& state) {}, msg()->first, *buf);
 
         }
     };

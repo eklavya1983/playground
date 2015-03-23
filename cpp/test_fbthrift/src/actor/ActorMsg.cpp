@@ -15,8 +15,8 @@ void initSerializers() {
     ADD_MAPPING(GetActorRegistryResp);
     ADD_MAPPING(UpdateActorRegistry);
     ADD_MAPPING(UpdateActorInfo);
-    ADD_MAPPING(RegisterActorSystem);
-    ADD_MAPPING(RegisterActorSystemResp);
+    ADD_MAPPING(Register);
+    ADD_MAPPING(RegisterResp);
     ADD_MAPPING(AddVolume);
     ADD_MAPPING(PutObject);
     ADD_MAPPING(PutObjectResp);

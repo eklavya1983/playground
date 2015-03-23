@@ -11,11 +11,11 @@ void behavior_test() {
 
     Behavior b;    
     b = {
-        OnMsg(1) >> [msg1called](ActorMsg &&m) mutable {
+        OnMsg(1) >> [msg1called]() mutable {
             msg1called  = true;
             std::cout << "Received one\n";
         },
-        OnMsg(2) >> [msg2called](ActorMsg &&m) mutable {
+        OnMsg(2) >> [msg2called]() mutable {
             msg2called = true;
         }
     };
@@ -25,8 +25,8 @@ void behavior_test() {
     ActorMsg msg2;
     setActorMsgTypeId(msg2, 2);
 
-    b.handle(std::move(msg1));
-    b.handle(std::move(msg2));
+    b.handle(actorMsgTypeId(msg1));
+    b.handle(actorMsgTypeId(msg2));
 
     ASSERT_TRUE(msg1called);
     ASSERT_TRUE(msg2called);
