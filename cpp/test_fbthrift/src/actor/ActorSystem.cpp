@@ -49,9 +49,9 @@ void ActorSystem::initBehaviors_()
             sendRegisterMsg_();
         },
         on(RegisterResp) >> [this]() {
-            auto &payload = msgPayload<RegisterResp>();
-            setId(payload.id);
-            systemInfo_.id = payload.id;
+            auto &respPayload = payload<RegisterResp>();
+            setId(respPayload.id);
+            systemInfo_.id = respPayload.id;
             ALog(INFO) << "Registration complete: " << systemInfo_;
             changeBhavior(&functionalBehavior_);
         }

@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project("store")
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 # Common flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -std=c++11")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -std=c++11")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -O2 -std=c++11")
 
 # Common variables
 set(TOPDIR ${CMAKE_SOURCE_DIR})
@@ -36,3 +40,8 @@ link_directories(${FBTHRIFT_LIB_DIRS})
 
 add_subdirectory(src)
 #add_subdirectory(config)
+
+#enable_testing()
+
+#add_test(actormsg_test actormsg_test) 
+#add_test(actormsg_test actormsg_test) 

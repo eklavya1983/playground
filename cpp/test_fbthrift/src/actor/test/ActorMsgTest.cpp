@@ -13,18 +13,49 @@
 
 using namespace actor;
 
+TEST(ActorMsg, mapping) {
+
+    addActorMsgMapping<Init>(ActorMsgTypeIds::InitMsg);
+    ASSERT_TRUE(gMsgMapTbl == nullptr ||
+                gMsgMapTbl->find(ActorMsgTypeInfo<Init>::typeId) == gMsgMapTbl->end());
+
+    addActorMsgMapping<GetActorRegistry>(ActorMsgTypeIds::GetActorRegistryMsg);
+    ASSERT_DEATH(
+        addActorMsgMapping<GetActorRegistry>(ActorMsgTypeIds::GetActorRegistryMsg),
+        ".* registered");
+}
+
 TEST(ActorMsg, serialize) {
     using namespace cpp2;
+
+    /* Register message mapping for serialization */
+    addActorMsgMapping<Register>(ActorMsgTypeIds::RegisterMsg);
+
+    using apache::thrift::FRAGILE;
+    ActorId from(FRAGILE, 10, 10);
+    ActorId to(FRAGILE, 11, 11);
+    auto payload = std::make_shared<Register>();
+    payload->systemInfo.id = from;
+    payload->systemInfo.ip = "127.0.0.1";
+    payload->systemInfo.port = 8000;
+    payload->systemInfo.type = "test";
+    ActorMsg m = makeActorMsg<Register>(from, to, payload);
+    
+    /* Check makeActorMsg */
+    ASSERT_EQ(m.from(), from);
+    ASSERT_EQ(m.to(), to);
+    ASSERT_EQ(m.payload<Register>(), *payload);
+
+    /* Serialize */
     std::unique_ptr<folly::IOBuf> serializedBuf;
-    ActorMsgHeader h;
-    ActorMsgHeader h2;
-    h.requestId = 100;
+    auto typeId = ActorMsgTypeInfo<Register>::typeId;
+    (gMsgMapTbl->at(typeId).first)(m, serializedBuf);
+    
+    /* Deserialize */
+    ActorMsg m2;
+    (gMsgMapTbl->at(typeId).second)(serializedBuf, m2);
 
-    serializeActorMsg<ActorMsgHeader>(h, serializedBuf);
-
-    deserializeActorMsg<ActorMsgHeader>(serializedBuf.get(),  h2);
-
-    ASSERT_EQ(h.requestId, h2.requestId);
+    ASSERT_EQ(*payload, m2.payload<Register>());
 }
 
 int main(int argc, char** argv) {

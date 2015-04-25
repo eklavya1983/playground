@@ -30,7 +30,7 @@ ActorPtr ActorSystem::spawnActor(ArgsT&&... args)
 template <class MsgT>
 bool ActorSystem::routeToActor(MsgT&& msg)
 {
-    auto actor = lookUpActor(msg.first.to);
+    auto actor = lookUpActor(msg.to());
     if (!actor) {
         return false;
     }

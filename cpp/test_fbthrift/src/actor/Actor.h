@@ -32,14 +32,18 @@ struct Actor {
     void reply(Payload &&payload);
 
     inline ActorMsg* msg() {return curMsg_;}
-    inline const ActorMsgTypeId& msgTypeId() const {return curMsg_->first.typeId;}
-    inline const ActorId& from() const {return curMsg_->first.from;}
-    inline const ActorId& to() const {return curMsg_->first.from;}
-    inline const RequestId& requestId() const {return curMsg_->first.requestId;}
+    inline const ActorMsgTypeId& typeId() const {return curMsg_->typeId();}
+    inline const ActorId& from() const {return curMsg_->from();}
+    inline const ActorId& to() const {return curMsg_->to();}
+    inline const RequestId& requestId() const {return curMsg_->requestId();}
     template <class T>
-    inline T& msgPayload() {
-        return *(reinterpret_cast<T*>(curMsg_->second.get()));
+    inline T& payload() {
+        return curMsg_->payload<T>();
     }
+
+    /* Counters.  Exposed for testing */
+    int32_t                             droppedCntr;
+    int32_t                             deferredCntr;
 protected:
     virtual void initBehaviors_();
 
@@ -55,6 +59,7 @@ protected:
     Behavior                            stoppedBehavior_;
     Behavior                            inErrBehavior_;
     Behavior                            *currentBehavior_;
+
 };
 
 using ActorPtr = std::shared_ptr<Actor>;

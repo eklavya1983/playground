@@ -21,12 +21,12 @@ void behavior_test() {
     };
 
     ActorMsg msg1;
-    setActorMsgTypeId(msg1, 1);
+    msg1.typeId(1);
     ActorMsg msg2;
-    setActorMsgTypeId(msg2, 2);
+    msg2.typeId(2);
 
-    b.handle(actorMsgTypeId(msg1));
-    b.handle(actorMsgTypeId(msg2));
+    b.handle(msg1.typeId());
+    b.handle(msg2.typeId());
 
     ASSERT_TRUE(msg1called);
     ASSERT_TRUE(msg2called);

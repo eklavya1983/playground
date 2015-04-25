@@ -11,6 +11,8 @@ Actor::Actor(ActorSystem *system)
     system_ = system;
     myId_ = ActorSystem::invalidActorId();
     currentBehavior_ = nullptr;
+    droppedCntr = 0;
+    deferredCntr = 0;
 }
 
 Actor::~Actor() {
@@ -19,6 +21,7 @@ Actor::~Actor() {
 void Actor::init() {
     ALog(INFO);
     initBehaviors_();
+    currentBehavior_ = &initBehavior_;
     send(makeActorMsg<Init>());
 }
 
@@ -65,7 +68,7 @@ void Actor::handle(ActorMsg &&msg) {
     curMsg_ = &msg;
 
     CHECK(to() == myId());
-    currentBehavior_->handle(actorMsgTypeId(msg));
+    currentBehavior_->handle(msg.typeId());
 
     curMsg_ = nullptr;
 }
@@ -94,11 +97,13 @@ void NotificationQueueActor::messageAvailable(ActorMsg &&msg) {
 }
 
 void NotificationQueueActor::dropMsg() {
-    CHECK(!"TODO: Implemented");
+    droppedCntr++;
+    // TODO: Implement
 }
 
 void NotificationQueueActor::deferMsg() {
-    CHECK(!"TODO: Implemented");
+    deferredCntr++;
+    // TODO: Implement
 }
 
 }  // namespace actor
