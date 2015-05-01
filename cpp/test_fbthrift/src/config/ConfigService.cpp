@@ -1,10 +1,11 @@
 #include <util/Log.h>
 #include <actor/Actor.hpp>
 #include <config/ConfigService.h>
+#include <util/TypeMappings.h>
 
 DEFINE_int32(port, 8000, "Config port");
 
-namespace config {
+namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
 
@@ -63,14 +64,14 @@ void ConfigService::handleRegisterMsg_() {
     system_->routeToActor(std::move(replyMsg));
 }
 
-}  // namespace config
+}  // namespace bhoomi 
 
 
 int main(int argc, char** argv) {
     google::ParseCommandLineFlags(&argc, &argv, true);
     /* Start actor system */
-    actor::initActorMsgMappings();
-    actor::ActorSystemPtr system(new config::ConfigService("127.0.0.1", 8000));
+    bhoomi::initActorMsgMappings();
+    actor::ActorSystemPtr system(new bhoomi::ConfigService("127.0.0.1", 8000));
     CHECK(system == system->getPtr());
     system->init();
     system->loop();

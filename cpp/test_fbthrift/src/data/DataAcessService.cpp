@@ -1,10 +1,11 @@
 #include <util/Log.h>
 #include <actor/ActorSystem.hpp>
 #include <data/DataAcessService.h>
+#include <util/TypeMappings.h>
 
 DEFINE_int32(dataPort, 9000, "data port");
 
-namespace data {
+namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
 
@@ -24,14 +25,14 @@ void DataAccessService::initBehaviors_() {
         }
     };
 }
-    
-}  // namespace data 
+
+}  // bhoomi
 
 int main(int argc, char** argv) {
     google::ParseCommandLineFlags(&argc, &argv, true);
     /* Start actor system */
-    actor::initActorMsgMappings();
-    actor::ActorSystemPtr system(new data::DataAccessService(FLAGS_dataPort, "127.0.0.1", 8000));
+    bhoomi::initActorMsgMappings();
+    actor::ActorSystemPtr system(new bhoomi::DataAccessService(FLAGS_dataPort, "127.0.0.1", 8000));
     CHECK(system == system->getPtr());
     system->init();
     system->loop();

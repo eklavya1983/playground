@@ -9,9 +9,10 @@
 #include <folly/io/async/EventBaseManager.h>
 #include <util/Log.h>
 #include <config/ConfigService.h>
+#include <util/TypeMappings.h>
 
 using namespace actor;
-using namespace config;
+using namespace bhoomi;
 
 TEST(ActorSystem, spawn) {
     ActorSystemPtr system(new ConfigService("127.0.0.1", 8000));
@@ -27,7 +28,7 @@ TEST(ActorSystem, spawn) {
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    actor::initActorMsgMappings();
+    bhoomi::initActorMsgMappings();
     auto ret = RUN_ALL_TESTS();
     return ret;
 }

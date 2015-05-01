@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& stream, const Behavior& b)
 void Behavior::handle(const ActorMsgTypeId &typeId) {
     auto handlerItr = handlers_.find(typeId);
     if (handlerItr == handlers_.end()) {
-        handlerItr = handlers_.find(ActorMsgTypeInfo<Other>::typeId);
+        handlerItr = handlers_.find(ActorMsgTypeEnum<Other>::typeId);
         if (handlerItr == handlers_.end()) {
             assert(!"TODO: Implement"); 
             // TODO: Determine behavior here

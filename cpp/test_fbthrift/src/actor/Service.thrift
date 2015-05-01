@@ -56,32 +56,6 @@ enum Error {
 /*-----------------------------------------------------------
  * Common actor messages 
  *-----------------------------------------------------------*/
-enum ActorMsgTypeIds {
-    OtherMsg			= 1,
-    InitMsg			= 2,
-    NOPAYLOAD_MSG_END		= 99,
-
-    COMMON_MSG_BEGIN		= 100,
-    GetActorRegistryMsg		= 101,
-    GetActorRegistryRespMsg	= 102,
-    UpdateActorRegistryMsg	= 103,
-    UpdateActorInfoMsg		= 105,
-    COMMON_MSG_END		= 999,
-
-    CONFIG_MSG_BEGIN 		= 1000,
-    RegisterMsg 		= 1001,
-    RegisterRespMsg 		= 1002,
-    CONFIG_MSG_END 		= 1999,
-
-    DATAACESS_MSG_BEGIN 	= 2000,
-    GroupAddVolumeMsg 		= 2001,
-    GroupPutObjectMsg		= 2002,
-    GroupPutObjectRespMsg	= 2003,
-    GroupGetObjectMsg		= 2004,
-    GroupGetObjectRespMsg	= 2005,
-    DATAACESS_MSG_END 		= 2999,
-}
-
 struct Init {}
 struct Other {}
 

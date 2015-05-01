@@ -106,40 +106,45 @@ inline void toActorMsg(const std::unique_ptr<folly::IOBuf> &buf, ActorMsg &msg) 
     msg.payload(deserializedMsg);
 }
 
-/* Typedefs */
-using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
-using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
-using SerializerTbl = std::unordered_map<ActorMsgTypeId, std::pair<SerializerF, DeserializerF>>;
-extern SerializerTbl *gMsgMapTbl;
+#define ADD_MSGMAPPING(type, id) addActorMsgTypeMapping<type, id>(#type)
 
 /* To store the type id for type T*/
-template <class T>
-struct ActorMsgTypeInfo {
-    static ActorMsgTypeId typeId;
+template <class MsgT>
+struct ActorMsgTypeEnum {
+    static ActorMsgTypeId       typeId;
+};
+template <ActorMsgTypeId id>
+struct ActorMsgTypeName {
+    static const char* typeName;
 };
 
-template <class MsgT, class EnumT>
-void addActorMsgMapping(EnumT e) {
-    /* Store enum id in ActorMsgTypeInfo */
-    auto typeId = static_cast<ActorMsgTypeId>(e);
-    ActorMsgTypeInfo<MsgT>::typeId = typeId;
+using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
+using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
+struct  ActorMsgTypeInfo {
+    const char*          typeName;
+    SerializerF          serializer;
+    DeserializerF        deserializer;
+};
+using SerializerTbl = std::unordered_map<ActorMsgTypeId, ActorMsgTypeInfo>;
+extern SerializerTbl *gMsgTypeInfoTbl;
 
-    if (typeId <= static_cast<ActorMsgTypeId>(ActorMsgTypeIds::NOPAYLOAD_MSG_END)) {
-        /* Don't add serializers for types that don't necessarily have payloads */
-        return;
-    }
+template <class MsgT, ActorMsgTypeId typeId>
+void addActorMsgTypeMapping(const char* typeName) {
+    /* Store enum id in ActorMsgTypeEnum */
+    ActorMsgTypeEnum<MsgT>::typeId = typeId;
+    ActorMsgTypeName<typeId>::typeName= typeName;
 
     /* Map the serializers and deserializer for the the type */
-    if (gMsgMapTbl == nullptr) {
-        gMsgMapTbl = new SerializerTbl();
+    if (gMsgTypeInfoTbl == nullptr) {
+        gMsgTypeInfoTbl = new SerializerTbl();
     }
-    CHECK(gMsgMapTbl->find(typeId) == gMsgMapTbl->end())
+    CHECK(gMsgTypeInfoTbl->find(typeId) == gMsgTypeInfoTbl->end())
         << typeId << " is already registered";
-    (*gMsgMapTbl)[typeId] = {&toIOBuf<MsgT>, &toActorMsg<MsgT>};
+    (*gMsgTypeInfoTbl)[typeId] = {typeName, &toIOBuf<MsgT>, &toActorMsg<MsgT>};
 }
-extern void initActorMsgMappings();
-extern void clearActorMappings();
-extern const char* actorMsgName(ActorMsgTypeId id);
+void initCommonActorMsgMappings();
+void clearActorMappings();
+const char* actorMsgName(ActorMsgTypeId id);
 
 
 /**
@@ -157,7 +162,7 @@ inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
                              std::shared_ptr<void> &&payload) {
     ActorMsg msg;
     auto &hdr = msg.hdr;
-    hdr.typeId = ActorMsgTypeInfo<MsgT>::typeId;
+    hdr.typeId = ActorMsgTypeEnum<MsgT>::typeId;
     hdr.from = from;
     hdr.to = to;
     msg.buf = std::move(payload);

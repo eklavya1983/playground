@@ -6,7 +6,7 @@
 #include <folly/Demangle.h>
 #include <actor/ActorMsg.h>
 
-#define on(msgT) OnMsg(ActorMsgTypeInfo<msgT>::typeId, className())
+#define on(msgT) OnMsg(ActorMsgTypeEnum<msgT>::typeId, className())
 
 namespace actor {
 

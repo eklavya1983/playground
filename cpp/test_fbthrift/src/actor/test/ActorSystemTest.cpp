@@ -8,6 +8,7 @@
 #include <folly/io/async/EventBaseManager.h>
 #include <util/Log.h>
 #include <actor/ActorSystem.hpp>
+#include <util/TypeMappings.h>
 
 using namespace actor;
 using namespace folly;
@@ -35,7 +36,7 @@ TEST(ActorSystem, DISABLED_spawnmany) {
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    actor::initActorMsgMappings();
+    bhoomi::initActorMsgMappings();
     auto ret = RUN_ALL_TESTS();
     return ret;
 }

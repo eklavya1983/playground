@@ -2,7 +2,7 @@
 
 #include <actor/ActorSystem.h>
 
-namespace data {
+namespace bhoomi {
 
 struct DataAccessService : actor::ActorSystem {
     explicit DataAccessService(int myPort,

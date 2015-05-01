@@ -51,7 +51,7 @@ void RemoteActor::initBehaviors_() {
         on(Other) >> [this]() {
             /* serialize */
             std::unique_ptr<folly::IOBuf> buf;
-            auto &msgSerializerF = gMsgMapTbl->at(typeId()).first;
+            auto &msgSerializerF = gMsgTypeInfoTbl->at(typeId()).serializer;
             msgSerializerF(*msg(), buf);
             /* send the message */
             client_->actorMessage(

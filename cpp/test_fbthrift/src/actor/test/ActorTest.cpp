@@ -13,21 +13,19 @@ DECLARE_bool(failOnDrop);
 
 using namespace actor;
 template<class T>
-ActorMsgTypeId ActorMsgTypeInfo<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
+ActorMsgTypeId ActorMsgTypeEnum<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
+template<ActorMsgTypeId id>
+const char* ActorMsgTypeName<id>::typeName;
 
-enum {
-    TransToFunctionalMsg = static_cast<int>(ActorMsgTypeIds::NOPAYLOAD_MSG_END) + 1,
-    DoWorkMsg
-};
 struct TransToFunctional : util::DummySerializable {};
 struct DoWork : util::DummySerializable {};
 
 struct ActorTestF : testing::Test  {
     ActorTestF() {
-        addActorMsgMapping<Init>(ActorMsgTypeIds::InitMsg);
-        addActorMsgMapping<Other>(ActorMsgTypeIds::OtherMsg);
-        addActorMsgMapping<DoWork>(DoWorkMsg);
-        addActorMsgMapping<TransToFunctional>(TransToFunctionalMsg);
+        ADD_MSGMAPPING(Other,                       2);
+        ADD_MSGMAPPING(Init,                        3);
+        ADD_MSGMAPPING(DoWork,                      4);
+        ADD_MSGMAPPING(TransToFunctional,           5);
     }
     ~ActorTestF() {
         clearActorMappings();

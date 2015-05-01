@@ -1,7 +1,7 @@
 #include <actor/gen-cpp2/Service_constants.h>
 #include <actor/ActorSystem.hpp>
 
-namespace config {
+namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
 

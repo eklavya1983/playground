@@ -49,7 +49,7 @@ void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
                                   std::unique_ptr<folly::IOBuf> payload) {
     /* deserialize */
     auto msg = ActorMsg(*header, nullptr);
-    auto &msgDeserializerF = gMsgMapTbl->at(msg.typeId()).second;
+    auto &msgDeserializerF = gMsgTypeInfoTbl->at(msg.typeId()).deserializer;
     msgDeserializerF(payload, msg);
 
     /* route */

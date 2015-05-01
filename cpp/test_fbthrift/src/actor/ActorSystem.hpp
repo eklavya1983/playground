@@ -43,7 +43,7 @@ bool ActorSystem::routeToActor(MsgT&& msg)
          * Route RegisterResp directly to actor system
          */
         if (myId_ == invalidActorId() &&
-            msg.typeId() == ActorMsgTypeInfo<RegisterResp>::typeId) {
+            msg.typeId() == ActorMsgTypeEnum<RegisterResp>::typeId) {
             ACTOR_SEND(getPtr(), std::forward<MsgT>(msg));
             return true;
         }
