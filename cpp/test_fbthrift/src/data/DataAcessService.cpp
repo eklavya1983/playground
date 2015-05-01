@@ -1,48 +1,38 @@
-#include <actor/gen-cpp2/Service_constants.h>
+#include <util/Log.h>
 #include <actor/ActorSystem.hpp>
+#include <data/DataAcessService.h>
 
-DEFINE_int32(port, 8100, "Config port");
+DEFINE_int32(dataPort, 9000, "data port");
 
 namespace data {
 using namespace actor;
 using namespace actor::cpp2;
 
-struct DataAccessServiceActor : ActorSystem {
-    explicit DataAccessServiceActor(int myPort,
-                const std::string &configIp,
-                int configPort)
-    : ActorSystem(myPort, configIp, configPort)
-    {
-    }
 
- protected:
-    virtual void initBehavior_() override {
-        ActorSystem::initBehavior_();
+DataAccessService::DataAccessService(int myPort,
+                                     const std::string &configIp,
+                                     int configPort)
+    : ActorSystem("data", myPort, configIp, configPort)
+{
+}
 
-        functionalBehavior_ += {
-            on(AddVolume) >> [this]() {
-                handleAddVolumeMsg_();
-            }
-        };
-    }
+void DataAccessService::initBehaviors_() {
+    ActorSystem::initBehaviors_();
+
+    functionalBehavior_ += {
+        on(GroupAddVolume) >> [this]() {
+        }
+    };
+}
     
-    void handleInitMsg_() {
-    }
-
-    void handleAddVolumeMsg_() {
-    }
-
-};
-
 }  // namespace data 
-
 
 int main(int argc, char** argv) {
     google::ParseCommandLineFlags(&argc, &argv, true);
-
     /* Start actor system */
-    actor::ActorSystem system(FLAGS_port,"localhost", 0);
-    auto configActor = system.spawnActor<data::DataAccessServiceActor>();
-    system.init();
-    system.loop();
+    actor::initActorMsgMappings();
+    actor::ActorSystemPtr system(new data::DataAccessService(FLAGS_dataPort, "127.0.0.1", 8000));
+    CHECK(system == system->getPtr());
+    system->init();
+    system->loop();
 }

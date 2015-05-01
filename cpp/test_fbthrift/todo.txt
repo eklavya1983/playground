@@ -37,8 +37,10 @@ proxy actor
 rpc server
 
 Work Items
--Test ActorSystem bring up
+-Two pieces where was it sent..wchih behavior is handling it
 -Run config service
+-Make sure we aren't making unnecessary copies as messages are routed
+-Create a test with config service
 -Registration with config service
 -Add volume api against cofig service
 -config service sends add volume message to each registerd repllica with primary, secondary, etc.assignments.

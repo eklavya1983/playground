@@ -1,6 +1,7 @@
 #pragma once
 
 #include <folly/AtomicHashMap.h>
+#include <folly/wangle/concurrent/IOThreadPoolExecutor.h>
 
 #include <actor/Actor.h>
 #include <actor/ActorUtil.h>
@@ -68,8 +69,20 @@ struct ActorSystem : NotificationQueueActor {
     void handleInitMsg(ActorMsg &&msg);
     void handleUpdateActorTableMsg(ActorMsg &&msg);
 
+    folly::EventBase* getNextEventBase();
+    std::shared_ptr<folly::wangle::IOThreadPoolExecutor> getIOThreadPool();
+
+    /* Exposed so that message to behavior logging is more useful */
+    static const char* className() {return "ActorSystem";} 
+
+    inline bool isRemoteId(const ActorId& id) {
+        return id.systemId != myId_.systemId;
+    }
+    inline ActorId toRemoteId(const ActorId& id) {
+        return ActorId(apache::thrift::FRAGILE, id.systemId, LOCALID_START);
+    }
     inline static const ActorId& configActorId() {
-        const static ActorId configId(apache::thrift::FRAGILE, 1, 1);
+        const static ActorId configId(apache::thrift::FRAGILE, 1, 0);
         return configId;
     }
     inline static const ActorId& invalidActorId() {
@@ -96,11 +109,10 @@ struct ActorSystem : NotificationQueueActor {
     using ActorTbl =                    folly::AtomicHashMap<int64_t, ActorPtr>;
     using ActorTblPtr =                 std::unique_ptr<ActorTbl>;
     using ActorRegistry =               std::unordered_map<int64_t, ActorInfo>;
-    ActorTblPtr                         actorTbl_;
+    ActorTbl                            actorTbl_;
     ActorRegistry                       actorRegistry_; 
     ActorServerPtr                      server_;
-    // TODO: Event base management
-    folly::EventBase                    eventBase_;
+    std::shared_ptr<folly::wangle::IOThreadPoolExecutor> ioThreadPool_;
 };
 using ActorSystemPtr = std::shared_ptr<ActorSystem>;
 

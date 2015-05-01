@@ -26,6 +26,7 @@ struct ReplicaGroupInfo {
     4: list<ActorSystemId> 		healthyServices;
     5: list<ActorSystemId> 		unhealthyServices;
 }
+typedef ReplicaGroupInfo (cpp.type = "std::unique_ptr<ReplicaGroupInfo>") ReplicaGroupInfoptr
 
 struct ReplicaRequestHeader {
     1: ActorMsgHeader		actorHdr;
@@ -64,7 +65,7 @@ enum ActorMsgTypeIds {
     GetActorRegistryMsg		= 101,
     GetActorRegistryRespMsg	= 102,
     UpdateActorRegistryMsg	= 103,
-    UpdateActorInfoMsg		= 104,
+    UpdateActorInfoMsg		= 105,
     COMMON_MSG_END		= 999,
 
     CONFIG_MSG_BEGIN 		= 1000,
@@ -73,11 +74,11 @@ enum ActorMsgTypeIds {
     CONFIG_MSG_END 		= 1999,
 
     DATAACESS_MSG_BEGIN 	= 2000,
-    AddVolumeMsg 		= 2001,
-    PutObjectMsg		= 2002,
-    PutObjectRespMsg		= 2003,
-    GetObjectMsg		= 2004,
-    GetObjectRespMsg		= 2005,
+    GroupAddVolumeMsg 		= 2001,
+    GroupPutObjectMsg		= 2002,
+    GroupPutObjectRespMsg	= 2003,
+    GroupGetObjectMsg		= 2004,
+    GroupGetObjectRespMsg	= 2005,
     DATAACESS_MSG_END 		= 2999,
 }
 
@@ -112,28 +113,18 @@ struct RegisterResp {
 /*-----------------------------------------------------------
  * Data acess messages 
  *-----------------------------------------------------------*/
-enum DataAcessMsgTypes {
-    DATAACESS_MSG_BEGIN 	= 2000,
-    AddVolumeMsg 		= 2001,
-    PutObjectMsg		= 2002,
-    PutObjectRespMsg		= 2003,
-    GetObjectMsg		= 2004,
-    GetObjectRespMsg		= 2005,
-    DATAACESS_MSG_END 		= 2999,
-}
-
-struct AddVolume {
-    1: ReplicaGroupInfo 	replicaInfo;
+struct GroupAddVolume {
+    1: ReplicaGroupInfo		replicaInfo;
     2: i64			volumeId;
     3: string 			volumeName;
 }
-struct PutObject {
+struct GroupPutObject {
 }
-struct PutObjectResp {
+struct GroupPutObjectResp {
 }
-struct GetObject {
+struct GroupGetObject {
 }
-struct GetObjectResp {
+struct GroupGetObjectResp {
 }
 
 service TestService {

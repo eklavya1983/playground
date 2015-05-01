@@ -8,7 +8,7 @@ using namespace cpp2;
 template<class ActorT, class ... ArgsT>
 ActorPtr ActorSystem::spawnRootActor(ArgsT&&... args) {
     CHECK(nextLocalActorId_ == LOCALID_START);
-    CHECK(actorTbl_->size() == 0);
+    CHECK(actorTbl_.size() == 0);
     return spawnActor<ActorT>(std::forward<ArgsT>(args)...);
 }
 
@@ -17,12 +17,12 @@ ActorPtr ActorSystem::spawnActor(ArgsT&&... args)
 {
     ActorId id;
 
-    ActorPtr a = std::make_shared<ActorT>(this, &eventBase_, std::forward<ArgsT>(args)...);
+    ActorPtr a = std::make_shared<ActorT>(this, getNextEventBase(), std::forward<ArgsT>(args)...);
     id.systemId = myId().systemId;
     id.localId = nextLocalActorId_++;
     a->setId(id);
-    actorTbl_->insert(std::make_pair(toInt64(id), a));
-    a->send(makeActorMsg<Init>());
+    actorTbl_.insert(std::make_pair(toInt64(id), a));
+    a->init();
 
     return a;
 }
@@ -30,11 +30,28 @@ ActorPtr ActorSystem::spawnActor(ArgsT&&... args)
 template <class MsgT>
 bool ActorSystem::routeToActor(MsgT&& msg)
 {
-    auto actor = lookUpActor(msg.to());
+    ActorPtr actor;
+
+    if (isRemoteId(msg.to())) {
+        actor = lookUpActor(toRemoteId(msg.to()));
+    } else {
+        actor = lookUpActor(msg.to());
+    }
+
     if (!actor) {
+        /* During registration actor system won't have an id until registration complets.
+         * Route RegisterResp directly to actor system
+         */
+        if (myId_ == invalidActorId() &&
+            msg.typeId() == ActorMsgTypeInfo<RegisterResp>::typeId) {
+            ACTOR_SEND(getPtr(), std::forward<MsgT>(msg));
+            return true;
+        }
+        CHECK(false) << "Failed to route message: " << msg;
         return false;
     }
-    actor->send(std::forward<MsgT>(msg));
+
+    ACTOR_SEND(actor, std::forward<MsgT>(msg));
     return true;
 }
 

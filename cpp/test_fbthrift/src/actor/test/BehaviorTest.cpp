@@ -9,7 +9,7 @@ void behavior_test() {
     bool msg1called = false;
     bool msg2called = false;
 
-    Behavior b;    
+    Behavior b("Behavior");
     b = {
         OnMsg(1) >> [msg1called]() mutable {
             msg1called  = true;

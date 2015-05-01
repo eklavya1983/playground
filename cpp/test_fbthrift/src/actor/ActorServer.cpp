@@ -1,16 +1,21 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <util/Log.h>
 #include <actor/ActorSystem.hpp>
 #include <actor/ActorServer.h>
 
 namespace actor {
-ReplicaActorServer::ReplicaActorServer(ActorSystem *system, int port)
+ReplicaActorServer::ReplicaActorServer(ActorSystem *system, int nIoThreads, int port)
 {
     system_ = system;
     port_ = port;
+    server_.reset(new apache::thrift::ThriftServer("disabled", false));
+    server_->setPort(port_);
+    server_->setInterface(std::unique_ptr<ServiceHandler>(new ServiceHandler(system_)));
+    // server_->setIOThreadPool(system_->getIOThreadPool());
+    server_->setNWorkerThreads(nIoThreads);
 }
 
-void ReplicaActorServer::start() {
-    std::shared_ptr<apache::thrift::ThriftServer> server(new apache::thrift::ThriftServer);
+void ReplicaActorServer::start(bool block) {
     if (true) {
         std::shared_ptr<apache::thrift::concurrency::ThreadFactory> threadFactory(
             new apache::thrift::concurrency::PosixThreadFactory);
@@ -19,16 +24,20 @@ void ReplicaActorServer::start() {
                 1, 1000, false, 0));
         threadManager->threadFactory(threadFactory);
         threadManager->start();
-        server->setThreadManager(threadManager);
+        server_->setThreadManager(threadManager);
     }
-    server->setPort(port_);
-    server->setInterface(std::unique_ptr<ServiceHandler>(new ServiceHandler(system_)));
 
-    serverThread_.reset(new apache::thrift::util::ScopedServerThread(server));
+    if (block) {
+        server_->serve();
+    } else {
+        serverThread_.reset(new apache::thrift::util::ScopedServerThread(server_));
+    }
 }
 
 void ReplicaActorServer::stop() {
-    serverThread_.reset();
+    if (serverThread_) {
+        serverThread_.reset();
+    }
 }
 
 
@@ -38,11 +47,15 @@ ServiceHandler::ServiceHandler(ActorSystem *system) {
 
 void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
                                   std::unique_ptr<folly::IOBuf> payload) {
-    // TODO: Check if move is succesful or not
-    bool ret = system_->routeToActor(
-        ActorMsg(*header, std::make_shared<Payload>(std::move(payload))));
+    /* deserialize */
+    auto msg = ActorMsg(*header, nullptr);
+    auto &msgDeserializerF = gMsgMapTbl->at(msg.typeId()).second;
+    msgDeserializerF(payload, msg);
+
+    /* route */
+    bool ret = system_->routeToActor(std::move(msg));
     if (!ret) {
-        // TODO: log an error
+        LOG(ERROR) << "Failed to route message: " << msg;
     }
 }
 

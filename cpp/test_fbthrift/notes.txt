@@ -16,6 +16,20 @@ Accepting connetions
 -Acceptor::connectionReady
 -Cpp2Worker::onNewConnection
 
+Cpp2Worker creation
+#0  apache::thrift::ThriftAcceptorFactory::newAcceptor (this=this@entry=0x8dc008,
+    eventBase=0x7fffe00009f0) at server/ThriftServer.cpp:92
+#1  0x00007ffff71a992b in folly::ServerWorkerPool::threadStarted (this=0x8dca48, h=0x8db250)
+    at wangle/bootstrap/ServerBootstrap.cpp:25
+#2  0x00007ffff71bd1d1 in folly::wangle::ThreadPoolExecutor::addObserver (this=<optimized out>,
+    o=...) at wangle/concurrent/ThreadPoolExecutor.cpp:183
+#3  0x00007ffff78c31db in folly::ServerBootstrap<folly::wangle::ChannelPipeline<folly::IOBufQueue&, std::unique_ptr<folly::IOBuf, std::default_delete<folly::IOBuf> >> >::group(std::shared_ptr<folly::wangle::IOThreadPoolExecutor>, std::shared_ptr<folly::wangle::IOThreadPoolExecutor>) (
+    this=this@entry=0x8d9148, accept_group=..., io_group=...)
+    at /home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/folly/folly/wangle/bootstrap/ServerBootstrap.h:144
+#4  0x00007ffff78b98d1 in apache::thrift::ThriftServer::setup (this=this@entry=0x8d90e0)
+    at server/ThriftServer.cpp:326
+#5  0x00007ffff78ba04e in apache::thrift::ThriftServer::serve (this=0x8d90e0)
+    at server/ThriftServer.cpp:369
 
 New connection bt
 #0  apache::thrift::Cpp2Worker::onNewConnection (this=0x7fffe00045d8, sock=..., addr=0x7fffee4f29d0,
@@ -109,3 +123,7 @@ ConfigApiAsyncProcessor::process_registerService
 GeneratedAsyncProcessor::deserializeRequest()
 deserilization codepath ex:
 ConfigApiAsyncProcessor::process_registerService() -> deserializeRequest(args, buf.get(), iprot.get(), c.get());
+
+
+cpp2server.cpp
+-has information about parameterizing thrift server

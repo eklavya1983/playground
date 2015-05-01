@@ -5,6 +5,10 @@
 #include <actor/gen-cpp2/ServiceApi.h>
 #include <actor/ActorMsg.h>
 
+namespace apache { namespace thrift {
+class ThriftServer;
+}}
+
 namespace actor {
 
 using namespace cpp2;
@@ -13,18 +17,19 @@ using namespace cpp2;
 struct ActorSystem;
 
 struct ActorServer {
-    virtual void start() = 0;
+    virtual void start(bool block) = 0;
     virtual void stop() = 0;
 };
 using ActorServerPtr = std::shared_ptr<ActorServer>;
 
 struct ReplicaActorServer : ActorServer {
-    explicit ReplicaActorServer(ActorSystem *system, int port);
-    virtual void start() override;
+    explicit ReplicaActorServer(ActorSystem *system, int nIoThreads, int port);
+    virtual void start(bool block) override;
     virtual void stop() override;
  protected:
     ActorSystem *system_;
     int port_;
+    std::shared_ptr<apache::thrift::ThriftServer> server_;
     std::unique_ptr<apache::thrift::util::ScopedServerThread> serverThread_;
 };
 

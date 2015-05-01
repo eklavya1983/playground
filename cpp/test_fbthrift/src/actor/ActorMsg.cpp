@@ -24,8 +24,11 @@ ActorMsg::ActorMsg(ActorMsg &&msg)
 ActorMsg::~ActorMsg() {
 }
 
+/*********************************************************************************
+ * Actor message specific
+ *********************************************************************************/
 template<class T>
-ActorMsgTypeId ActorMsgTypeInfo<T>::typeId;
+ActorMsgTypeId ActorMsgTypeInfo<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
 
 SerializerTbl *gMsgMapTbl = nullptr;
 
@@ -39,16 +42,20 @@ void initActorMsgMappings() {
     ADD_MAPPING(UpdateActorInfo);
     ADD_MAPPING(Register);
     ADD_MAPPING(RegisterResp);
-    ADD_MAPPING(AddVolume);
-    ADD_MAPPING(PutObject);
-    ADD_MAPPING(PutObjectResp);
-    ADD_MAPPING(GetObject);
-    ADD_MAPPING(GetObjectResp);
+    ADD_MAPPING(GroupAddVolume);
+    ADD_MAPPING(GroupPutObject);
+    ADD_MAPPING(GroupPutObjectResp);
+    ADD_MAPPING(GroupGetObject);
+    ADD_MAPPING(GroupGetObjectResp);
 
 }
 
 void clearActorMappings() {
     gMsgMapTbl->clear();
     gMsgMapTbl = nullptr;
+}
+
+const char* actorMsgName(ActorMsgTypeId id) {
+    return _ActorMsgTypeIds_VALUES_TO_NAMES.at(static_cast<ActorMsgTypeIds>(id));
 }
 }  // namespace actor

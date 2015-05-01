@@ -1,7 +1,10 @@
+#include <util/Log.h>
 #include <actor/ActorSystem.hpp>
 #include <actor/ActorUtil.h>
 #include <actor/RemoteActor.h>
-#include <util/Log.h>
+
+DEFINE_int32(actorthreads, 2, "Number of actor threads");
+DEFINE_int32(serverthreads, 2, "Number of server io threads");
 
 namespace actor {
 
@@ -9,7 +12,11 @@ ActorSystem::ActorSystem(const std::string &systemType,
                          int myPort,
                          const std::string &configIp,
                          int configPort)
-    : NotificationQueueActor(nullptr)
+    : NotificationQueueActor(this),
+    // TODO: Revisit siziing this. Two optins
+    // 1. Make it unordered_map
+    // 2. Have config service determine the size
+    actorTbl_(1024)
 {
     systemInfo_.type = systemType;
     systemInfo_.id = invalidActorId();
@@ -18,25 +25,22 @@ ActorSystem::ActorSystem(const std::string &systemType,
     systemInfo_.port = myPort;
     // TODO: Set this on restarts
     systemInfo_.incarnation = 1;
-    configIp_ = configIp_;
+    configIp_ = configIp;
     configPort_ = configPort;
     nextLocalActorId_ = LOCALID_START;
 
-    // TODO: Revisit setting event base here
-    setEventBase(&eventBase_);
-    server_.reset(new ReplicaActorServer(this, myPort)); 
+    ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
+    setEventBase(getNextEventBase());
+    server_.reset(new ReplicaActorServer(this, FLAGS_serverthreads, myPort)); 
 }
 
 ActorSystem::~ActorSystem()
 {
     server_->stop();
-    eventBase_.terminateLoopSoon();
 }
 
 void ActorSystem::init() {
-
-    // TODO: start the server
-    server_->start();
+    CHECK(this == system_);
     NotificationQueueActor::init();
 }
 
@@ -53,7 +57,7 @@ void ActorSystem::initBehaviors_()
             setId(respPayload.id);
             systemInfo_.id = respPayload.id;
             ALog(INFO) << "Registration complete: " << systemInfo_;
-            changeBhavior(&functionalBehavior_);
+            changeBehavior(&functionalBehavior_);
         }
     };
     functionalBehavior_ += {
@@ -65,18 +69,25 @@ void ActorSystem::initBehaviors_()
 
 ActorPtr ActorSystem::createRemoteActor_(const ActorInfo &info) {
     DCHECK(getEventBase()->isInEventBaseThread());
-    // CHECK(info.id.systemId == ROOT_ACTOR_LOCAL_ID);
+    /* For now we only create remote actor/proxies for actors systems */
+    CHECK(isActorSystemId(info.id));
     CHECK(lookUpActor(info.id) == nullptr);
     
-    ALog(INFO) << info;
+    ALog(INFO) << "Creating remote actor: " << info;
 
-    ActorPtr actor = std::make_shared<RemoteActor>(this, &eventBase_, info);
+    ActorPtr actor = std::make_shared<RemoteActor>(this, getNextEventBase());
     actor->setId(info.id);
-    actorTbl_->insert(std::make_pair(toInt64(info.id), actor));
+    actorTbl_.insert(std::make_pair(toInt64(info.id), actor));
+    actor->init();
 
+    /* We don't send init message to remote actor.  Instead we send
+     * UpdateActorInfo as the init method
+     * See updateActorRegistry_() it also doen the same thing when
+     * creating remote actor
+     */
     auto payload = std::make_shared<UpdateActorInfo>();
     payload->info = info;
-    actor->send(
+    ACTOR_SEND(actor,
         makeActorMsg<UpdateActorInfo>(myId(), info.id, std::move(payload)));
 
     return actor;
@@ -93,17 +104,21 @@ Error ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor)
         actorRegistry_[toInt64(info.id)] = info;
     } else {
         if (info.incarnation < entry->second.incarnation) {
+            AVLog(LCONFIG) << "Failed to update registry.  Incarnation # is less.  Current: "
+                << entry->second.incarnation << " input: " << info.incarnation;
             return Error::ERR_INVALID;
         }
         entry->second = info;
     }
+    AVLog(LCONFIG) << "Updating actor registry with new info: " << info;
 
+    /* Create actor(if requested) or update existing actor with new information */
     auto actor = lookUpActor(info.id);
     if (actor) {
         /* For existing remote actor send a message to update connection */
         auto payload = std::make_shared<UpdateActorInfo>();
         payload->info = info;
-        actor->send(
+        ACTOR_SEND(actor,
             makeActorMsg<UpdateActorInfo>(myId(), info.id, std::move(payload)));
     } else if (createActor) {
         /* Create new remote actor if requested */
@@ -134,15 +149,15 @@ void ActorSystem::initConfigRemoteActor_()
 
 ActorPtr ActorSystem::lookUpActor(const ActorId &id)
 {
-    auto itr = actorTbl_->find(toInt64(id));
-    if (itr == actorTbl_->end()) {
+    auto itr = actorTbl_.find(toInt64(id));
+    if (itr == actorTbl_.end()) {
         return nullptr;
     }
     return itr->second;
 }
 
 void ActorSystem::loop() {
-    eventBase_.loopForever();
+    server_->start(true);
 }
 
 void ActorSystem::handleInitMsg(ActorMsg &&msg) {
@@ -151,6 +166,16 @@ void ActorSystem::handleInitMsg(ActorMsg &&msg) {
 
 void ActorSystem::handleUpdateActorTableMsg(ActorMsg &&msg) {
     assert(!"TODO: Implement");
+}
+
+std::shared_ptr<folly::wangle::IOThreadPoolExecutor> ActorSystem::getIOThreadPool()
+{
+    return ioThreadPool_;
+}
+
+folly::EventBase* ActorSystem::getNextEventBase()
+{
+    return ioThreadPool_->getEventBase();
 }
 
 }  // namespace actor

@@ -8,9 +8,10 @@ using namespace cpp2;
 struct RemoteActor : NotificationQueueActor {
     /* Lifecycle */
     RemoteActor(ActorSystem *system,
-                folly::EventBase *eventBase,
-                const ActorInfo &info);
+                folly::EventBase *eventBase);
     ~RemoteActor();
+
+    static const char* className() {return "RemoteActor";} 
 
  protected:
     void initBehaviors_() override;

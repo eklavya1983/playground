@@ -59,9 +59,16 @@ struct ActorMsg {
         return *this;
     }
 
+    const static ActorMsgTypeId INVALID_MSGTYPEID = 0;
     ActorMsgHeader hdr;
     Payload buf;
 };
+
+template <class T>
+inline T& operator << (T &stream, const ActorMsg& msg) {
+    stream << msg.hdr;
+    return stream;
+}
 
 template <class MsgT, class ProtocolT = apache::thrift::BinaryProtocolWriter>
 inline void serializeActorMsg(const MsgT &msg, std::unique_ptr<folly::IOBuf> &serializedBuf) {
@@ -132,6 +139,7 @@ void addActorMsgMapping(EnumT e) {
 }
 extern void initActorMsgMappings();
 extern void clearActorMappings();
+extern const char* actorMsgName(ActorMsgTypeId id);
 
 
 /**

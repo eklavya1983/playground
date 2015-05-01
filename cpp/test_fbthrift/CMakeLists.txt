@@ -5,8 +5,9 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Common flags
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -std=c++11")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g -O2 -std=c++11")
+set(CMAKE_COMMON_FLAGS "-Wall -Werror -g -std=c++11")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_COMMON_FLAGS} -O2")
 
 # Common variables
 set(TOPDIR ${CMAKE_SOURCE_DIR})
@@ -31,6 +32,9 @@ set(COMMON_LIBS actor thriftcpp2 thrift folly glog gflags pthread boost_system d
 # Common set of libraries to link for tests 
 set(COMMON_TEST_LIBS gtest ${COMMON_LIBS})
 
+# enable testing
+enable_testing()
+
 # common include directories
 include_directories(${FBTHRIFT_INCLUDE_DIRS}
 	${TOPDIR}/src)
@@ -41,7 +45,6 @@ link_directories(${FBTHRIFT_LIB_DIRS})
 add_subdirectory(src)
 #add_subdirectory(config)
 
-#enable_testing()
 
 #add_test(actormsg_test actormsg_test) 
 #add_test(actormsg_test actormsg_test) 

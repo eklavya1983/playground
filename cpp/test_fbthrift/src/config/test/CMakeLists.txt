@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project("test")
 
-add_custom_target(all_unit_tests)
-
+# Here add_unit_test is coming actor/test/CMakefiles.txt
 macro(add_unit_test name)
   add_executable(${name}Test ${name}Test.cpp ${ARGN})
   target_link_libraries(${name}Test
@@ -15,7 +14,4 @@ include_directories(${GTEST_INCLUDE_DIRS})
 link_directories(${GTEST_LIB_DIRS})
 
 
-add_unit_test(ActorSystem)
-add_unit_test(Actor)
-add_unit_test(ActorMsg)
-add_unit_test(Behavior)
+add_unit_test(Config)
