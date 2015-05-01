@@ -27,10 +27,6 @@ ActorMsg::~ActorMsg() {
 /*********************************************************************************
  * Actor message specific
  *********************************************************************************/
-template<class T>
-ActorMsgTypeId ActorMsgTypeEnum<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
-template<ActorMsgTypeId id>
-const char* ActorMsgTypeName<id>::typeName;
 
 SerializerTbl *gMsgTypeInfoTbl = nullptr;
 

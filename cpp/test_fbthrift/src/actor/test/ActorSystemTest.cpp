@@ -18,8 +18,8 @@ TEST(ActorSystem, spawn) {
                                          "127.0.0.1", 8000));
     system->init();
 
-    // auto eb = EventBaseManager::get()->getEventBase();
-    // eb->tryRunAfterDelay(std::bind(&EventBase::terminateLoopSoon, eb), 100);
+    auto eb = EventBaseManager::get()->getEventBase();
+    eb->tryRunAfterDelay(std::bind(&EventBase::terminateLoopSoon, eb), 1000);
     system->loop();
 }
 

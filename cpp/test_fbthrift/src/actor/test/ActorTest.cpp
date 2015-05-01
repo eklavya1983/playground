@@ -12,10 +12,6 @@
 DECLARE_bool(failOnDrop);
 
 using namespace actor;
-template<class T>
-ActorMsgTypeId ActorMsgTypeEnum<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
-template<ActorMsgTypeId id>
-const char* ActorMsgTypeName<id>::typeName;
 
 struct TransToFunctional : util::DummySerializable {};
 struct DoWork : util::DummySerializable {};

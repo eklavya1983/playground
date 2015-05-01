@@ -117,6 +117,10 @@ template <ActorMsgTypeId id>
 struct ActorMsgTypeName {
     static const char* typeName;
 };
+template<class T>
+ActorMsgTypeId ActorMsgTypeEnum<T>::typeId = ActorMsg::INVALID_MSGTYPEID;
+template<ActorMsgTypeId id>
+const char* ActorMsgTypeName<id>::typeName;
 
 using SerializerF = std::function<void (const ActorMsg&, std::unique_ptr<folly::IOBuf>&)>;
 using DeserializerF = std::function<void (const std::unique_ptr<folly::IOBuf>&, ActorMsg&)>;
