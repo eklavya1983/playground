@@ -74,7 +74,7 @@ void Actor::handle(ActorMsg &&msg) {
     ACTOR_MSG_TRACE(msg);
 
     // TODO: It'd be nice to log which behiavior is handling the messsage as well
-    currentBehavior_->handle(msg.typeId());
+    currentBehavior_->handle({msg.direction(), msg.typeId()});
 
     curMsg_ = nullptr;
 }

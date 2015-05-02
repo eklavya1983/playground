@@ -3,7 +3,7 @@ namespace cpp actor
 typedef i32 ActorSystemId
 typedef i32 LocalActorId
 typedef i32 ActorMsgTypeId
-typedef i64 RequestId
+typedef i32 RequestId
 typedef binary (cpp.type = "folly::IOBuf") ActorMsgBuffer
 
 struct ActorId {
@@ -12,11 +12,12 @@ struct ActorId {
 }
 
 struct ActorMsgHeader {
-    1: ActorMsgTypeId		typeId;
-    2: ActorId			from;
-    3: ActorId			to;
-    4: RequestId		requestId;
-    5: int			status; 
+    1: byte			direction;
+    2: ActorMsgTypeId		typeId;
+    3: ActorId			from;
+    4: ActorId			to;
+    5: RequestId		requestId;
+    6: i32			status; 
 }
 
 typedef i32 ReplicaId

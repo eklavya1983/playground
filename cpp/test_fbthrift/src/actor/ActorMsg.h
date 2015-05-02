@@ -4,6 +4,8 @@
 #include <actor/gen-cpp2/Service_types.h>
 
 namespace actor {
+#define MSGDIRECTION_NORMAL         0
+#define MSGDIRECTION_RESPONSE       1
 
 using namespace cpp2;
 
@@ -19,6 +21,12 @@ struct ActorMsg {
 
     ActorMsg& operator=(const ActorMsg&) = default;
     ActorMsg& operator=(ActorMsg&&) = default;
+
+    inline const int8_t& direction() const { return hdr.direction; }
+    inline ActorMsg& direction(const int8_t &dir) {
+        hdr.direction = dir;
+        return *this;
+    }
 
     inline const ActorMsgTypeId& typeId() const { return hdr.typeId; }
     inline ActorMsg& typeId(const ActorMsgTypeId& id) {

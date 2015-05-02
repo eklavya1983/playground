@@ -3,11 +3,19 @@
 
 namespace actor {
 
-std::ostream& operator<<(std::ostream &stream, const BehaviorItem &b) {
-    stream << "[" << actorMsgName(b.typeId) << ":" << b.typeId << "] -> ["
-        << b.handlerName << "]";
+std::ostream& operator<<(std::ostream &stream, const BehaviorKey &k) {
+    stream << actorMsgName(k.typeId) << ":" << k.typeId;
+    if (k.direction == MSGDIRECTION_RESPONSE) {
+        stream << ":resp";
+    }
     return stream;
 }
+
+std::ostream& operator<<(std::ostream &stream, const BehaviorItem &b) {
+    stream << "[" << b.behaviorKey << "] -> [" << b.handlerName << "]";
+    return stream;
+}
+
 std::ostream& operator<<(std::ostream& stream, const Behavior& b)
 {
     stream << "Behavior Name: " << b.name_ << "\n";
@@ -17,12 +25,17 @@ std::ostream& operator<<(std::ostream& stream, const Behavior& b)
     return stream;
 }
 
-void Behavior::handle(const ActorMsgTypeId &typeId) {
-    auto handlerItr = handlers_.find(typeId);
+void Behavior::handle(const BehaviorKey& key) {
+    auto handlerItr = handlers_.find(key);
     if (handlerItr == handlers_.end()) {
-        handlerItr = handlers_.find(ActorMsgTypeEnum<Other>::typeId);
+        if (key.direction == MSGDIRECTION_RESPONSE) {
+            handlerItr = handlers_.find({MSGDIRECTION_RESPONSE, ActorMsgTypeEnum<Other>::typeId});
+        }
         if (handlerItr == handlers_.end()) {
-            assert(!"TODO: Implement"); 
+            handlerItr = handlers_.find({MSGDIRECTION_NORMAL, ActorMsgTypeEnum<Other>::typeId});
+        }
+        if (handlerItr == handlers_.end()) {
+            CHECK(false) << "TODO: Implement";
             // TODO: Determine behavior here
             return;
         }

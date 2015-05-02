@@ -53,6 +53,7 @@ struct Actor : std::enable_shared_from_this<Actor> {
     void reply(Payload &&payload);
 
     inline ActorMsg* msg() {return curMsg_;}
+    inline const int8_t& direction() const {return curMsg_->direction();}
     inline const ActorMsgTypeId& typeId() const {return curMsg_->typeId();}
     inline const ActorId& from() const {return curMsg_->from();}
     inline const ActorId& to() const {return curMsg_->to();}
