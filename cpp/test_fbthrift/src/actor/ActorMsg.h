@@ -51,6 +51,7 @@ struct ActorMsg {
         hdr.requestId = id;
         return *this;
     }
+    inline bool isTracked() const { return requestId() != ActorMsg::UNTRACKED_ID; }
 
     const ActorMsgHeader& header() const { return hdr; }
 
@@ -68,6 +69,8 @@ struct ActorMsg {
     }
 
     const static ActorMsgTypeId INVALID_MSGTYPEID = 0;
+    const static RequestId UNTRACKED_ID = 0;
+
     ActorMsgHeader hdr;
     Payload buf;
 };
@@ -160,6 +163,33 @@ const char* actorMsgName(ActorMsgTypeId id);
 
 
 /**
+* @brief 
+*
+* @tparam MsgT
+* @param direction
+* @param from
+* @param to
+* @param requestId
+* @param payload
+*
+* @return 
+*/
+template <class MsgT>
+inline ActorMsg makeActorMsgCommon(const int8_t &direction,
+                                   const ActorId &from,
+                                   const ActorId &to,
+                                   const RequestId &requestId,
+                                   std::shared_ptr<void> &&payload) {
+    ActorMsg msg;
+    msg.direction(direction)
+        .typeId(ActorMsgTypeEnum<MsgT>::typeId)
+        .from(from)
+        .to(to)
+        .requestId(requestId)
+        .payload(payload);
+    return msg;
+}
+/**
 * @brief Use this function for createing an actor message
 *
 * @tparam MsgT
@@ -172,13 +202,10 @@ const char* actorMsgName(ActorMsgTypeId id);
 template <class MsgT>
 inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
                              std::shared_ptr<void> &&payload) {
-    ActorMsg msg;
-    auto &hdr = msg.hdr;
-    hdr.typeId = ActorMsgTypeEnum<MsgT>::typeId;
-    hdr.from = from;
-    hdr.to = to;
-    msg.buf = std::move(payload);
-    return msg;
+    return makeActorMsgCommon<MsgT>(MSGDIRECTION_NORMAL,
+                                    from, to,
+                                    ActorMsg::UNTRACKED_ID,
+                                    std::move(payload));
 }
 
 template <class MsgT>

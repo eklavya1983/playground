@@ -2,6 +2,7 @@
 #include <actor/ActorUtil.h>
 #include <actor/Actor.h>
 #include <actor/ActorSystem.h>
+#include <actor/ActorRequest.h>
 #include <sstream>
 
 DEFINE_bool(failOnDrop, true, "fail on dropping messages");
@@ -17,6 +18,7 @@ Actor::Actor(ActorSystem *system)
     currentBehavior_ = nullptr;
     droppedCntr = 0;
     deferredCntr = 0;
+    tracker_ = nullptr;
 }
 
 Actor::~Actor() {
@@ -36,6 +38,12 @@ ActorPtr Actor::getPtr() {
 
 void Actor::initBehaviors_() {
     initBehavior_ = {
+        onresp(Other) >> [this]() {
+            if (tracker_) {
+                tracker_->onResponse(std::move(*curMsg_));
+                curMsg_ = nullptr;
+            }
+        },
         on(Other) >> [this]() {
             ALog(INFO) << "Init - dropping messages";
             dropMsg();

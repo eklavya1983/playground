@@ -10,7 +10,6 @@ TEST(RequestTracker, addRequest) {
     req
     .withQuorum(2)
     .toActors({ActorId(), ActorId()});
-
 }
 
 int main(int argc, char** argv) {

@@ -17,6 +17,14 @@
         (__actor__)->send(std::move(__msgRef__)); \
     } while(false)
 
+#define SEND(__msg__) \
+    ACTOR_SEND(this, __msg__)
+
+#define REPLY(__msgT__, __payload__) \
+    do { \
+        reply<__msgT__>(__payload__); \
+    } while(false)
+
 /**
 * @brief For tracing actor messages
 */
@@ -25,6 +33,7 @@
 namespace actor {
 using namespace cpp2;
 
+struct RequestTracker;
 struct ActorSystem;
 using ActorHandlerF = std::function<void (ActorMsg &&)>;
 
@@ -95,6 +104,7 @@ protected:
      * to avoid having to lock
      */
     RingBuffer<ActorMsgHeader, 32>      traceBuffer_;
+    RequestTracker                      *tracker_;
 };
 
 using ActorQueue = folly::NotificationQueue<ActorMsg>;

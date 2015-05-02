@@ -2,6 +2,8 @@
 
 namespace actor {
 
+const RequestId ActorMsg::UNTRACKED_ID;
+
 ActorMsg::ActorMsg() {
 }
 

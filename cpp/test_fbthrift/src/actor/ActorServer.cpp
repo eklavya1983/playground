@@ -53,10 +53,7 @@ void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
     msgDeserializerF(payload, msg);
 
     /* route */
-    bool ret = system_->routeToActor(std::move(msg));
-    if (!ret) {
-        LOG(ERROR) << "Failed to route message: " << msg;
-    }
+    system_->routeToActor(std::move(msg));
 }
 
 void ServiceHandler::replicaRequest(std::unique_ptr<ReplicaRequestHeader> header,

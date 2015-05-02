@@ -13,6 +13,9 @@
 using namespace actor;
 using namespace folly;
 
+struct PingPongActor {
+};
+
 TEST(ActorSystem, spawn) {
     ActorSystemPtr system(new ActorSystem("test", 9000,
                                          "127.0.0.1", 8000));
