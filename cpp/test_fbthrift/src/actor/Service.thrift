@@ -16,6 +16,7 @@ struct ActorMsgHeader {
     2: ActorId			from;
     3: ActorId			to;
     4: RequestId		requestId;
+    5: int			status; 
 }
 
 typedef i32 ReplicaId
@@ -45,6 +46,7 @@ struct ActorInfo {
 service ServiceApi {
     oneway void replicaRequest(1: ReplicaRequestHeader header, 2: binary payload);
     oneway void actorMessage(1: ActorMsgHeader header, 2: ActorMsgBuffer payload);
+    oneway void trackedActorMessageResponse(1: ActorMsgHeader header, 2: ActorMsgBuffer payload);
 }
 /*-----------------------------------------------------------
  * Errors

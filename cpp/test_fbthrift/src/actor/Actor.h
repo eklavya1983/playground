@@ -4,19 +4,23 @@
 #include <folly/io/async/NotificationQueue.h>
 #include <actor/ActorMsg.h>
 #include <actor/Behavior.h>
+#include <actor/RingBuffer.h>
 
-
-#define ACTOR_MSG_TRACE_INTERNAL(__actor__, __call__, __msg__) \
-    do { \
-        ActorMsg &&__msgRef__ = (__msg__); \
-        VLOG(LMSG) << #__call__ << ":" << __msgRef__; \
-        (__actor__)->__call__(std::move(__msgRef__)); \
-    } while(false)
 /**
 * @brief Use these macros for sending actor messages.  Using this macro helps us
 * log/trace actor messages
 */
-#define ACTOR_SEND(__actor__, __msg__) ACTOR_MSG_TRACE_INTERNAL(__actor__, send, __msg__)
+#define ACTOR_SEND(__actor__, __msg__) \
+    do { \
+        ActorMsg &&__msgRef__ = (__msg__); \
+        VLOG(LMSG) << "send :" << __msgRef__; \
+        (__actor__)->send(std::move(__msgRef__)); \
+    } while(false)
+
+/**
+* @brief For tracing actor messages
+*/
+#define ACTOR_MSG_TRACE(__msg__) traceBuffer_.push(__msg__.header())
 
 namespace actor {
 using namespace cpp2;
@@ -86,7 +90,10 @@ protected:
     Behavior                            initBehavior_;
     Behavior                            functionalBehavior_;
     Behavior                            *currentBehavior_;
-
+    /* For tracing messages. Messages are traced when they are handled not when they are sent
+     * to avoid having to lock
+     */
+    RingBuffer<ActorMsgHeader, 32>      traceBuffer_;
 };
 
 using ActorQueue = folly::NotificationQueue<ActorMsg>;

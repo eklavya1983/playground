@@ -69,7 +69,10 @@ void Actor::handle(ActorMsg &&msg) {
     curMsg_ = &msg;
 
     DCHECK(to() == myId());
+
     AVLog(LMSG) << "handle: " << msg;
+    ACTOR_MSG_TRACE(msg);
+
     // TODO: It'd be nice to log which behiavior is handling the messsage as well
     currentBehavior_->handle(msg.typeId());
 
