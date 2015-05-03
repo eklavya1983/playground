@@ -17,8 +17,8 @@
         (__actor__)->send(std::move(__msgRef__)); \
     } while(false)
 
-#define SEND(__msg__) \
-    ACTOR_SEND(this, __msg__)
+#define ROUTE(__msg__) \
+    system_->routeToActor(__msg__)
 
 #define REPLY(__msgT__, __payload__) \
     do { \

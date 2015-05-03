@@ -28,8 +28,10 @@ void Actor::init() {
     ALog(INFO);
     initBehaviors_();
     dumpBehaviors();
-    currentBehavior_ = &initBehavior_;
-    ACTOR_SEND(this, makeActorMsg<Init>());
+    if (currentBehavior_ == nullptr) {
+        currentBehavior_ = &initBehavior_;
+        ACTOR_SEND(this, makeActorMsg<Init>());
+    }
 }
 
 ActorPtr Actor::getPtr() {
@@ -40,7 +42,7 @@ void Actor::initBehaviors_() {
     initBehavior_ = {
         onresp(Other) >> [this]() {
             if (tracker_) {
-                tracker_->onResponse(std::move(*curMsg_));
+                tracker_->handleResponse(std::move(*curMsg_));
                 curMsg_ = nullptr;
             }
         },
@@ -116,7 +118,12 @@ void NotificationQueueActor::setEventBase(folly::EventBase *eventBase) {
 }
 
 void NotificationQueueActor::send(ActorMsg &&msg) {
+    DCHECK(msg.direction() == MSGDIRECTION_NORMAL ||
+           msg.direction() == MSGDIRECTION_RESPONSE);
+    DCHECK(msg.typeId() != ActorMsg::INVALID_MSGTYPEID);
+
     msg.to(myId());
+
     queue_.putMessage(std::move(msg));
 }
 

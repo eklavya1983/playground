@@ -64,6 +64,7 @@ struct OnMsg {
     : OnMsg(behaviorKey, "") {
     }
     OnMsg(const BehaviorKey &behaviorKey, const std::string &handlerName) {
+        CHECK(behaviorKey.typeId != ActorMsg::INVALID_MSGTYPEID) << "Trying to use an unmapped type";
         this->behaviorKey = behaviorKey;
         this->handlerName = handlerName;
     }

@@ -4,13 +4,24 @@
 #include <actor/ActorServer.h>
 
 namespace actor {
-ReplicaActorServer::ReplicaActorServer(ActorSystem *system, int nIoThreads, int port)
+ReplicaActorServer::ReplicaActorServer(ActorSystem *system,
+                       int nIoThreads, int port)
+    : ReplicaActorServer(system, nullptr, nIoThreads, port)
+{
+}
+
+ReplicaActorServer::ReplicaActorServer(ActorSystem *system,
+                                       std::unique_ptr<ServiceHandler> handler,
+                                       int nIoThreads, int port)
 {
     system_ = system;
     port_ = port;
+    if (handler == nullptr) {
+        handler.reset(new ServiceHandler(system_));
+    }
     server_.reset(new apache::thrift::ThriftServer("disabled", false));
     server_->setPort(port_);
-    server_->setInterface(std::unique_ptr<ServiceHandler>(new ServiceHandler(system_)));
+    server_->setInterface(std::move(handler));
     // server_->setIOThreadPool(system_->getIOThreadPool());
     server_->setNWorkerThreads(nIoThreads);
 }
@@ -53,11 +64,6 @@ void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
     msgDeserializerF(payload, msg);
 
     /* route */
-    system_->routeToActor(std::move(msg));
+    ROUTE(std::move(msg));
 }
-
-void ServiceHandler::replicaRequest(std::unique_ptr<ReplicaRequestHeader> header,
-                                    std::unique_ptr<std::string> payload) {
-}
-
 }  // namespace actor

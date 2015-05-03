@@ -1,4 +1,5 @@
 #include <util/Log.h>
+#include <actor/gen-cpp2/ConfigApi.h>
 #include <actor/Actor.hpp>
 #include <config/ConfigService.h>
 #include <util/TypeMappings.h>
@@ -9,9 +10,18 @@ namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
 
+struct ConfigHandler : virtual ::actor::cpp2::ConfigApiSvIf, ServiceHandler {
+    using ServiceHandler::ServiceHandler;
+    virtual void registerActorSystem(::actor::cpp2::ActorId& _return,
+                                     std::unique_ptr<::actor::cpp2::ActorInfo> info) {
+    }
+};
+
 ConfigService::ConfigService(const std::string &configIp,
                              int configPort)
-    : ActorSystem("config", configPort, configIp, configPort)
+    : ActorSystem(true, "config",
+                  std::unique_ptr<ConfigHandler>(new ConfigHandler(this)),
+                  configPort, configIp, configPort)
 {
     setId(configActorId());
     nextSystemId_ = configActorId().systemId + 1;

@@ -12,13 +12,22 @@ namespace actor {
 
 struct ActorSystem : NotificationQueueActor {
     /* Life cycle */
-    ActorSystem(const std::string &systemType,
+    ActorSystem();
+    ActorSystem(bool standAlone,
+                const std::string &systemType,
+                std::unique_ptr<ServiceHandler> handler,
                 int myPort,
                 const std::string &configIp,
                 int configPort);
     virtual ~ActorSystem();
 
     virtual void init() override;
+
+    /**
+    * @brief Registers with configuration servicer.  Registration is performed in synchronous
+    * manner
+    */
+    virtual void registerWithConfigService();
 
     /**
     * @brief Spawn root actor

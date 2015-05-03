@@ -12,6 +12,32 @@ using namespace cpp2;
 using Payload = std::shared_ptr<void>;
 // using ActorMsg = std::pair<ActorMsgHeader, Payload>;
 
+/**
+* @brief Local payloads don't need to be serialized.
+* Actor payload types that aren't defined in thrift file can derive from this
+* class so that they don't have to define read()/write() methods explicitly.
+*/
+template <class ProtcolR = apache::thrift::BinaryProtocolReader,
+          class ProtocolW = apache::thrift::BinaryProtocolWriter>
+struct LocalPayload {
+    uint32_t read(ProtcolR* iprot) {
+        CHECK(false) << "Invalid operation on LocalPayload";
+        return 0;
+    }
+    uint32_t serializedSize(ProtocolW* prot_) const {
+        CHECK(false) << "Invalid operation on LocalPayload";
+        return 0;
+    }
+    uint32_t serializedSizeZC(ProtocolW* prot_) const {
+        CHECK(false) << "Invalid operation on LocalPayload";
+        return 0;
+    }
+    uint32_t write(ProtocolW* prot_) const {
+        CHECK(false) << "Invalid operation on LocalPayload";
+        return 0;
+    }
+};
+
 struct ActorMsg {
     ActorMsg();
     ActorMsg(const ActorMsgHeader &hdr, const Payload &buf);
@@ -158,6 +184,7 @@ void addActorMsgTypeMapping(const char* typeName) {
     (*gMsgTypeInfoTbl)[typeId] = {typeName, &toIOBuf<MsgT>, &toActorMsg<MsgT>};
 }
 void initCommonActorMsgMappings();
+void initActorSystemMappings();
 void clearActorMappings();
 const char* actorMsgName(ActorMsgTypeId id);
 

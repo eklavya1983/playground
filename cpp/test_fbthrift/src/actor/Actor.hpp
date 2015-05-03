@@ -13,6 +13,6 @@ void Actor::reply(Payload &&payload) {
                                              from(),
                                              requestId(),
                                              std::move(payload)); 
-    system_->routeToActor(std::move(replyMsg));
+    ROUTE(std::move(replyMsg));
 }
 }  // namespace actor

@@ -24,7 +24,8 @@ void RequestIf::setTracker(RequestTracker *tracker) {
 }
 
 QuorumRequest::QuorumRequest()
-: ackCnt_(0) {
+: ackSuccessCnt_(0), ackFailedCnt_(0)
+{
 }
 
 QuorumRequest& QuorumRequest::withQuorum(int32_t quorumCnt) {
@@ -32,17 +33,18 @@ QuorumRequest& QuorumRequest::withQuorum(int32_t quorumCnt) {
     return *this;
 }
 
-QuorumRequest& QuorumRequest::toActors(std::vector<ActorId> &&ids) {
-    actorIds_ = std::move(ids);
+QuorumRequest& QuorumRequest::toActors(const std::vector<ActorId> &ids) {
+    actorIds_ = ids;
     return *this;
 }
 
 void QuorumRequest::fire() {
 }
 
-void QuorumRequest::onResponse(ActorMsg &&msg) {
-    ackCnt_++;
-    if (ackCnt_ == quorumCnt_) {
+void QuorumRequest::handleResponse(ActorMsg &&msg) {
+    // TODO: look at the error 
+    ackSuccessCnt_++;
+    if ((ackSuccessCnt_ + ackFailedCnt_) == quorumCnt_) {
         completionCb_(Error::ERR_OK, *this);        
         tracker_->removeRequest(id_);
     }
@@ -66,13 +68,13 @@ void RequestTracker::removeRequest(const RequestId &id) {
     table_.erase(id);
 }
 
-void RequestTracker::onResponse(ActorMsg &&msg) {
+void RequestTracker::handleResponse(ActorMsg &&msg) {
     auto itr = table_.find(msg.requestId());
     if (itr == table_.end()) {
         LOG(WARNING) << "Request not found. Dropping message: " << msg;
         return;
     }
-    itr->second->onResponse(std::move(msg));
+    itr->second->handleResponse(std::move(msg));
 }
 
 }  // namespace actor

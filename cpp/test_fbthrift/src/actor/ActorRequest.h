@@ -12,7 +12,7 @@ struct RequestIf {
     RequestIf();
     virtual ~RequestIf() { }
     virtual void fire() = 0;
-    virtual void onResponse(ActorMsg &&msg) = 0;
+    virtual void handleResponse(ActorMsg &&msg) = 0;
     void setId(const RequestId& id);
     RequestId getId() const;
     void setTracker(RequestTracker *tracker);
@@ -65,14 +65,17 @@ T& RequestT<T>::withPayload(const Payload &payload) {
 struct QuorumRequest : RequestT<QuorumRequest> {
     QuorumRequest();
     virtual void fire() override;
-    virtual void onResponse(ActorMsg &&msg) override;
+    virtual void handleResponse(ActorMsg &&msg) override;
     QuorumRequest& withQuorum(int32_t quorumCnt);
-    QuorumRequest& toActors(std::vector<ActorId> &&ids);
+    QuorumRequest& toActors(const std::vector<ActorId> &ids);
+    inline const int32_t& ackSuccessCnt() const { return ackSuccessCnt_; }
+    inline const int32_t& ackFailedCnt() const { return ackFailedCnt_; }
 
  protected:
     int32_t                     quorumCnt_;
     std::vector<ActorId>        actorIds_;
-    int32_t                     ackCnt_;
+    int32_t                     ackSuccessCnt_;
+    int32_t                     ackFailedCnt_;
 };
 
 struct RequestTracker {
@@ -84,7 +87,7 @@ struct RequestTracker {
 
     void removeRequest(const RequestId &id);
 
-    void onResponse(ActorMsg &&msg);
+    void handleResponse(ActorMsg &&msg);
 
     template<class T, class ... ArgsT>
     T& allocRequest(ArgsT &&... args);

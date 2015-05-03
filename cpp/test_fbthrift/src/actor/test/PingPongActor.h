@@ -1,15 +1,16 @@
-#include <actor/Actor.h>
+#include <actor/Actor.hpp>
 #include <actor/ActorRequest.h>
+#include <actor/ActorSystem.h>
 
 namespace actor {
 namespace test {
 
-struct Ping {};
-struct Pong {};
-struct SendPing {
+struct Ping : LocalPayload<> {};
+struct Pong : LocalPayload<> {};
+struct SendPing : LocalPayload<> {
     ActorId to;
 };
-struct SendQuorumPing {
+struct SendQuorumPing : LocalPayload<> {
     std::vector<ActorId> toActors;
 };
 
@@ -17,10 +18,20 @@ struct SendQuorumPing {
 * @brief Helper actor for testing
 */
 struct PingPongActor : NotificationQueueActor {
+    using NotificationQueueActor::NotificationQueueActor;
+
+    static const char* className() {return "PingPongActor";} 
+
     int32_t         pingCnt = 0;
     int32_t         pongCnt = 0;
  protected:
     virtual void initBehaviors_() override {
+        NotificationQueueActor::initBehaviors_();
+        initBehavior_ += {
+            on(Init) >> [this]() {
+                changeBehavior(&functionalBehavior_);
+            }
+        };
         functionalBehavior_ += {
             on(Ping) >> [this]() {
                 pingCnt++;
@@ -28,19 +39,25 @@ struct PingPongActor : NotificationQueueActor {
             },
             onresp(Pong) >> [this]() {
                 if (curMsg_->isTracked()) {
-                    tracker_->onResponse(std::move(*curMsg_));
+                    tracker_->handleResponse(std::move(*curMsg_));
                 } else {
                     pongCnt++;
                 }
             },
             on(SendPing) >> [this]() {
-                SEND(makeActorMsg<Ping>(myId(), payload<SendPing>().to,
-                                        std::move(payload)));
+                ROUTE(makeActorMsg<Ping>(myId(), payload<SendPing>().to,
+                                         std::make_shared<Ping>()));
             },
             on(SendQuorumPing) >> [this]() {
                 auto& req = tracker_->allocRequest<QuorumRequest>();
+                auto completeCb = [this](const Error &e, QuorumRequest &q) {
+                    if (e == Error::ERR_OK) {
+                        pongCnt += q.ackSuccessCnt();
+                    }
+                };
                 req.toActors(payload<SendQuorumPing>().toActors)
                     .withQuorum(payload<SendQuorumPing>().toActors.size())
+                    .withCompletionCb(completeCb)
                     .fire();
             }
         };

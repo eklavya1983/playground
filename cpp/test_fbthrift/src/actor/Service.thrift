@@ -45,9 +45,7 @@ struct ActorInfo {
 }
 
 service ServiceApi {
-    oneway void replicaRequest(1: ReplicaRequestHeader header, 2: binary payload);
     oneway void actorMessage(1: ActorMsgHeader header, 2: ActorMsgBuffer payload);
-    oneway void trackedActorMessageResponse(1: ActorMsgHeader header, 2: ActorMsgBuffer payload);
 }
 /*-----------------------------------------------------------
  * Errors
@@ -79,6 +77,10 @@ struct UpdateActorInfo {
 /*-----------------------------------------------------------
  * Config messages 
  *-----------------------------------------------------------*/
+service ConfigApi {
+    ActorId registerActorSystem(1: ActorInfo info)
+}
+
 struct Register {
     1: ActorInfo		systemInfo;
 }

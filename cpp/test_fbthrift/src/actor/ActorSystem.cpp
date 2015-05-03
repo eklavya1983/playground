@@ -8,7 +8,14 @@ DEFINE_int32(serverthreads, 2, "Number of server io threads");
 
 namespace actor {
 
-ActorSystem::ActorSystem(const std::string &systemType,
+ActorSystem::ActorSystem()
+    : ActorSystem(true, "test", nullptr, 0, "0", 0)
+{
+}
+
+ActorSystem::ActorSystem(bool standAlone,
+                         const std::string &systemType,
+                         std::unique_ptr<ServiceHandler> handler,
                          int myPort,
                          const std::string &configIp,
                          int configPort)
@@ -18,6 +25,10 @@ ActorSystem::ActorSystem(const std::string &systemType,
     // 2. Have config service determine the size
     actorTbl_(1024)
 {
+    if (!standAlone) {
+        registerWithConfigService();
+    }
+
     systemInfo_.type = systemType;
     systemInfo_.id = invalidActorId();
     // TODO: Detect your ip here
@@ -31,7 +42,11 @@ ActorSystem::ActorSystem(const std::string &systemType,
 
     ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
     setEventBase(getNextEventBase());
-    server_.reset(new ReplicaActorServer(this, FLAGS_serverthreads, myPort)); 
+    if (!handler) {
+        handler.reset(new ServiceHandler(this));
+    }
+    server_.reset(new ReplicaActorServer(this, std::move(handler),
+                                         FLAGS_serverthreads, myPort)); 
 }
 
 ActorSystem::~ActorSystem()
@@ -42,6 +57,9 @@ ActorSystem::~ActorSystem()
 void ActorSystem::init() {
     CHECK(this == system_);
     NotificationQueueActor::init();
+}
+
+void ActorSystem::registerWithConfigService() {
 }
 
 void ActorSystem::initBehaviors_()
@@ -134,7 +152,7 @@ void ActorSystem::sendRegisterMsg_() {
     payload->systemInfo = systemInfo_;
     auto msg = makeActorMsg<Register>(myId(), configActorId(), payload);
     // TODO: Check how routeToActor() is working here
-    routeToActor(std::move(msg));
+    ROUTE(std::move(msg));
 }
 
 void ActorSystem::initConfigRemoteActor_()

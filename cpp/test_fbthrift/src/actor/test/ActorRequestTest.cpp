@@ -1,4 +1,5 @@
 #include <actor/ActorRequest.h>
+#include <actor/test/PingPongActor.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
