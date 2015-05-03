@@ -1,4 +1,8 @@
+#include <exception>
+#include <thrift/lib/cpp/async/TAsyncSocket.h>
+#include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 #include <util/Log.h>
+#include <actor/gen-cpp2/ConfigApi.h>
 #include <actor/ActorSystem.hpp>
 #include <actor/ActorUtil.h>
 #include <actor/RemoteActor.h>
@@ -25,10 +29,13 @@ ActorSystem::ActorSystem(bool standAlone,
     // 2. Have config service determine the size
     actorTbl_(1024)
 {
-    if (!standAlone) {
-        registerWithConfigService();
-    }
+    /* Set up threadpools so work can be done */
+    ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
+    setEventBase(getNextEventBase());
 
+    /* Do registration if required */
+    configIp_ = configIp;
+    configPort_ = configPort;
     systemInfo_.type = systemType;
     systemInfo_.id = invalidActorId();
     // TODO: Detect your ip here
@@ -36,12 +43,18 @@ ActorSystem::ActorSystem(bool standAlone,
     systemInfo_.port = myPort;
     // TODO: Set this on restarts
     systemInfo_.incarnation = 1;
-    configIp_ = configIp;
-    configPort_ = configPort;
+
+    if (!standAlone) {
+        registerWithConfigService();
+        CHECK(myId_ != invalidActorId() && systemInfo_.id != invalidActorId());
+    } else {
+        /* No need to register.  We will assign an id */
+        myId_ = {apache::thrift::FRAGILE, 1, LOCALID_START};
+        systemInfo_.id = myId_;
+    }
+
     nextLocalActorId_ = LOCALID_START;
 
-    ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
-    setEventBase(getNextEventBase());
     if (!handler) {
         handler.reset(new ServiceHandler(this));
     }
@@ -60,6 +73,22 @@ void ActorSystem::init() {
 }
 
 void ActorSystem::registerWithConfigService() {
+
+    using namespace apache::thrift;
+    using namespace apache::thrift::async;
+    using namespace apache::thrift::transport;
+
+    std::shared_ptr<TAsyncSocket> socket(
+        TAsyncSocket::newSocket(eventBase_, configIp_, configPort_));
+    auto client_channel = HeaderClientChannel::newChannel(socket);
+    std::unique_ptr<ConfigApiAsyncClient> client_(new ConfigApiAsyncClient(std::move(client_channel)));
+
+    try {
+        client_->sync_registerActorSystem(myId_, systemInfo_);
+    } catch (std::exception &e) {
+        CHECK(false) << "Exception raised in registration.  " << e.what();
+    }
+    systemInfo_.id = myId_;
 }
 
 void ActorSystem::initBehaviors_()

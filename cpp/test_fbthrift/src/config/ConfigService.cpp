@@ -1,4 +1,5 @@
 #include <util/Log.h>
+#include <folly/futures/Future.h>
 #include <actor/gen-cpp2/ConfigApi.h>
 #include <actor/Actor.hpp>
 #include <config/ConfigService.h>
@@ -9,6 +10,11 @@ DEFINE_int32(port, 8000, "Config port");
 namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
+
+struct RegisterReq {
+    std::unique_ptr<::actor::cpp2::ActorInfo> info;
+    folly::Promise<std::unique_ptr<ActorId>> promise;
+};
 
 struct ConfigHandler : virtual ::actor::cpp2::ConfigApiSvIf, ServiceHandler {
     using ServiceHandler::ServiceHandler;
