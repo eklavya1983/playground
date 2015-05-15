@@ -13,7 +13,7 @@ using namespace actor::cpp2;
 DataAccessService::DataAccessService(int myPort,
                                      const std::string &configIp,
                                      int configPort)
-    : ActorSystem(false, "data", nullptr, myPort, configIp, configPort)
+    : ActorSystem(invalidActorId(), "data", nullptr, myPort, configIp, configPort)
 {
 }
 

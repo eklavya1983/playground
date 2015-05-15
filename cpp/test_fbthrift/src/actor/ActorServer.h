@@ -31,8 +31,9 @@ struct ServiceHandler : virtual ::actor::cpp2::ServiceApiSvIf {
     explicit ServiceHandler(ActorSystem *system);
     virtual void actorMessage(std::unique_ptr<ActorMsgHeader> header,
                               std::unique_ptr<folly::IOBuf> payload) override;
- protected:
+    ActorSystem* getActorSystem();
 
+ protected:
     ActorSystem *system_;
     friend struct ActorServer;
 };
@@ -41,7 +42,7 @@ struct ServiceHandler : virtual ::actor::cpp2::ServiceApiSvIf {
 struct ReplicaActorServer : ActorServer {
     ReplicaActorServer(ActorSystem *system, int nIoThreads, int port);
     ReplicaActorServer(ActorSystem *system,
-                       std::unique_ptr<ServiceHandler> handler,
+                       std::unique_ptr<ServiceApiSvIf> handler,
                        int nIoThreads, int port);
     virtual void start(bool block) override;
     virtual void stop() override;

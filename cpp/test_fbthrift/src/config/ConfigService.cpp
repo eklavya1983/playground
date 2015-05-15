@@ -11,25 +11,26 @@ namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
 
-struct RegisterReq {
-    std::unique_ptr<::actor::cpp2::ActorInfo> info;
-    folly::Promise<std::unique_ptr<ActorId>> promise;
-};
-
 struct ConfigHandler : virtual ::actor::cpp2::ConfigApiSvIf, ServiceHandler {
     using ServiceHandler::ServiceHandler;
+
     virtual void registerActorSystem(::actor::cpp2::ActorId& _return,
-                                     std::unique_ptr<::actor::cpp2::ActorInfo> info) {
+                                     std::unique_ptr<::actor::cpp2::ActorInfo> info) override {
+        auto payload = std::make_shared<Register>();
+        payload->info = std::move(info);
+        auto f = payload->promise.getFuture();
+        system_->send(makeActorMsg<Register>(std::move(payload)));
+        f.wait();
+        _return = f.value();
     }
 };
 
 ConfigService::ConfigService(const std::string &configIp,
                              int configPort)
-    : ActorSystem(true, "config",
+    : ActorSystem(configActorId(), "config",
                   std::unique_ptr<ConfigHandler>(new ConfigHandler(this)),
                   configPort, configIp, configPort)
 {
-    setId(configActorId());
     nextSystemId_ = configActorId().systemId + 1;
 }
 
@@ -55,7 +56,8 @@ void ConfigService::initBehaviors_() {
 }
 
 void ConfigService::handleRegisterMsg_() {
-    auto &systemInfo = payload<Register>().systemInfo;
+    auto &req = payload<Register>();
+    auto &systemInfo = *(req.info);
 
     /* Assign id to first time registring system */
     if (systemInfo.id == invalidActorId()) {
@@ -64,20 +66,21 @@ void ConfigService::handleRegisterMsg_() {
         systemInfo.id = ActorId(apache::thrift::FRAGILE, nextSystemId_, LOCALID_START);
         nextSystemId_++;
     } else {
-        AVLog(LCONFIG) << "First time register message from: " << systemInfo;
+        AVLog(LCONFIG) << "Existing actorsystem register message from: " << systemInfo;
     }
 
     /* Accept by registering/updaging the system information */
-    auto resp = std::make_shared<RegisterResp>();
-    resp->error = static_cast<int32_t>(updateActorRegistry_(systemInfo, true));
-    if (resp->error == 0) {
-        resp->id = systemInfo.id;
+    auto ret = static_cast<int32_t>(updateActorRegistry_(systemInfo, true));
+    if (ret == 0) {
+        req.promise.setValue(systemInfo.id);
     } else {
-        CHECK(false) << "Failed to register";
+        req.promise.setException(RegisterException());
     }
+}
 
-    auto replyMsg = makeActorMsg<RegisterResp>(myId_, systemInfo.id,  std::move(resp)); 
-    system_->routeToActor(std::move(replyMsg));
+void initMappings() {
+    bhoomi::initActorMsgMappings();
+    ADD_MSGMAPPING(Register,                       7);
 }
 
 }  // namespace bhoomi 
@@ -85,8 +88,8 @@ void ConfigService::handleRegisterMsg_() {
 
 int main(int argc, char** argv) {
     google::ParseCommandLineFlags(&argc, &argv, true);
+    bhoomi::initMappings();
     /* Start actor system */
-    bhoomi::initActorMsgMappings();
     actor::ActorSystemPtr system(new bhoomi::ConfigService("127.0.0.1", 8000));
     CHECK(system == system->getPtr());
     system->init();

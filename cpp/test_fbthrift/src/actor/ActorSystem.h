@@ -13,9 +13,9 @@ namespace actor {
 struct ActorSystem : NotificationQueueActor {
     /* Life cycle */
     ActorSystem();
-    ActorSystem(bool standAlone,
+    ActorSystem(const ActorId &id,
                 const std::string &systemType,
-                std::unique_ptr<ServiceHandler> handler,
+                std::unique_ptr<ServiceApiSvIf> handler,
                 int myPort,
                 const std::string &configIp,
                 int configPort);

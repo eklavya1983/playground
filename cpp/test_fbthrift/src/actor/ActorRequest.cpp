@@ -23,6 +23,26 @@ void RequestIf::setTracker(RequestTracker *tracker) {
     tracker_ = tracker;
 }
 
+ActorRequest& ActorRequest::toActor(const ActorId &id) {
+    return *this;
+}
+
+folly::Future<RequestPtr<ActorRequest>> ActorRequest::fire() {
+    return promise_.getFuture();
+}
+
+template<class InT, class OutT>
+std::unique_ptr<OutT> dynamic_unique_ptr_cast(std::unique_ptr<InT>& in) {
+    std::unique_ptr<OutT> out(reinterpret_cast<OutT*>(in.release()));
+    return out;
+}
+
+void ActorRequest::handleResponse(ActorMsg &&msg) {
+    respMsg_ = std::move(msg);
+    auto req = tracker_->removeRequest(id_);
+    promise_.setValue(dynamic_unique_ptr_cast<RequestIf, ActorRequest>(req));
+}
+
 QuorumRequest::QuorumRequest()
 : ackSuccessCnt_(0), ackFailedCnt_(0)
 {
@@ -38,16 +58,18 @@ QuorumRequest& QuorumRequest::toActors(const std::vector<ActorId> &ids) {
     return *this;
 }
 
-void QuorumRequest::fire() {
+folly::Future<RequestPtr<QuorumRequest>> QuorumRequest::fire() {
+    return promise_.getFuture();
 }
 
 void QuorumRequest::handleResponse(ActorMsg &&msg) {
     // TODO: look at the error 
     ackSuccessCnt_++;
     if ((ackSuccessCnt_ + ackFailedCnt_) == quorumCnt_) {
-        completionCb_(Error::ERR_OK, *this);        
+        // completionCb_(Error::ERR_OK, *this);        
         tracker_->removeRequest(id_);
     }
+    // todo: set the promise
 }
 
 RequestTracker::RequestTracker()
@@ -58,14 +80,17 @@ RequestId RequestTracker::incrRequestId_() {
     return nextRequestId_++;
 }
 
-void RequestTracker::addRequest(RequestPtr &&req) {
+void RequestTracker::addRequest(RequestPtr<RequestIf> &&req) {
     auto id = incrRequestId_();
     req->setId(id);
     table_[incrRequestId_()] = std::move(req);
 }
 
-void RequestTracker::removeRequest(const RequestId &id) {
-    table_.erase(id);
+RequestPtr<RequestIf> RequestTracker::removeRequest(const RequestId &id) {
+    auto itr = table_.find(id);
+    RequestPtr<RequestIf> req = std::move(itr->second);
+    table_.erase(itr);
+    return req;
 }
 
 void RequestTracker::handleResponse(ActorMsg &&msg) {

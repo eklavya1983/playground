@@ -2,6 +2,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <folly/futures/Future.h>
 #include <actor/ActorMsg.h>
 
 namespace actor {
@@ -11,7 +12,6 @@ struct RequestTracker;
 struct RequestIf {
     RequestIf();
     virtual ~RequestIf() { }
-    virtual void fire() = 0;
     virtual void handleResponse(ActorMsg &&msg) = 0;
     void setId(const RequestId& id);
     RequestId getId() const;
@@ -23,19 +23,22 @@ struct RequestIf {
     Payload         payload_;
     RequestTracker  *tracker_;
 };
-using RequestPtr = std::unique_ptr<RequestIf>;
+template<typename T>
+using RequestPtr = std::unique_ptr<T>;
 
 template<class T>
 struct RequestT : RequestIf {
     using CompletionCb = std::function<void(const Error&, T&)>;
 
+    virtual folly::Future<RequestPtr<T>> fire() = 0;
     T& withId(const RequestId &id);
     T& withTimeout(int32_t timeoutMs);
     T& withCompletionCb(const CompletionCb &cb);
     T& withPayload(const Payload &payload);
 
  protected:
-    CompletionCb    completionCb_;
+    folly::Promise<RequestPtr<T>>          promise_;
+    CompletionCb                           completionCb_;
 };
 
 template<class T>
@@ -62,9 +65,26 @@ T& RequestT<T>::withPayload(const Payload &payload) {
     return static_cast<T&>(*this);
 }
 
+struct ActorRequest : RequestT<ActorRequest>{
+    ActorRequest& toActor(const ActorId &id);
+    virtual folly::Future<RequestPtr<ActorRequest>> fire() override;
+    virtual void handleResponse(ActorMsg &&msg) override;
+
+    template <class T>
+    inline T& respPayload() {
+        return respMsg_.payload<T>();
+    }
+    template <class T>
+    inline const T& respPayload() const {
+        return respMsg_.payload<T>();
+    }
+ protected:
+    ActorMsg            respMsg_;
+};
+
 struct QuorumRequest : RequestT<QuorumRequest> {
     QuorumRequest();
-    virtual void fire() override;
+    virtual folly::Future<RequestPtr<QuorumRequest>> fire() override;
     virtual void handleResponse(ActorMsg &&msg) override;
     QuorumRequest& withQuorum(int32_t quorumCnt);
     QuorumRequest& toActors(const std::vector<ActorId> &ids);
@@ -83,9 +103,9 @@ struct RequestTracker {
 
     virtual ~RequestTracker() { }
 
-    void addRequest(RequestPtr &&req);
+    void addRequest(RequestPtr<RequestIf> &&req);
 
-    void removeRequest(const RequestId &id);
+    RequestPtr<RequestIf> removeRequest(const RequestId &id);
 
     void handleResponse(ActorMsg &&msg);
 
@@ -94,7 +114,7 @@ struct RequestTracker {
 
  protected:
     RequestId incrRequestId_();
-    std::unordered_map<RequestId, RequestPtr> table_;
+    std::unordered_map<RequestId, RequestPtr<RequestIf>> table_;
     RequestId nextRequestId_;
 };
 

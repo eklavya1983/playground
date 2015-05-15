@@ -50,8 +50,6 @@ void initActorSystemMappings() {
     ADD_MSGMAPPING(GetActorRegistryResp,           4);
     ADD_MSGMAPPING(UpdateActorRegistry,            5);
     ADD_MSGMAPPING(UpdateActorInfo,                6);
-    ADD_MSGMAPPING(Register,                       7);
-    ADD_MSGMAPPING(RegisterResp,                   8);
 }
 
 void clearActorMappings() {

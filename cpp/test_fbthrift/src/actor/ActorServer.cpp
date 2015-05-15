@@ -11,7 +11,7 @@ ReplicaActorServer::ReplicaActorServer(ActorSystem *system,
 }
 
 ReplicaActorServer::ReplicaActorServer(ActorSystem *system,
-                                       std::unique_ptr<ServiceHandler> handler,
+                                       std::unique_ptr<ServiceApiSvIf> handler,
                                        int nIoThreads, int port)
 {
     system_ = system;
@@ -65,5 +65,9 @@ void ServiceHandler::actorMessage(std::unique_ptr<ActorMsgHeader> header,
 
     /* route */
     ROUTE(std::move(msg));
+}
+
+ActorSystem* ServiceHandler::getActorSystem() {
+    return system_;
 }
 }  // namespace actor

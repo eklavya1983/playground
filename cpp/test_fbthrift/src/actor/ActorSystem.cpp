@@ -13,13 +13,13 @@ DEFINE_int32(serverthreads, 2, "Number of server io threads");
 namespace actor {
 
 ActorSystem::ActorSystem()
-    : ActorSystem(true, "test", nullptr, 0, "0", 0)
+    : ActorSystem(invalidActorId(), "test", nullptr, 0, "0", 0)
 {
 }
 
-ActorSystem::ActorSystem(bool standAlone,
+ActorSystem::ActorSystem(const ActorId &id,
                          const std::string &systemType,
-                         std::unique_ptr<ServiceHandler> handler,
+                         std::unique_ptr<ServiceApiSvIf> handler,
                          int myPort,
                          const std::string &configIp,
                          int configPort)
@@ -33,33 +33,39 @@ ActorSystem::ActorSystem(bool standAlone,
     ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
     setEventBase(getNextEventBase());
 
-    /* Do registration if required */
     configIp_ = configIp;
     configPort_ = configPort;
+    
     systemInfo_.type = systemType;
-    systemInfo_.id = invalidActorId();
     // TODO: Detect your ip here
     systemInfo_.ip = "127.0.0.1";
     systemInfo_.port = myPort;
     // TODO: Set this on restarts
     systemInfo_.incarnation = 1;
 
-    if (!standAlone) {
+    /* Do registration if required */
+    if (id == invalidActorId()) {
+        systemInfo_.id = invalidActorId();
         registerWithConfigService();
-        CHECK(myId_ != invalidActorId() && systemInfo_.id != invalidActorId());
     } else {
         /* No need to register.  We will assign an id */
-        myId_ = {apache::thrift::FRAGILE, 1, LOCALID_START};
+        myId_ = id;
         systemInfo_.id = myId_;
     }
+    CHECK(myId_ != invalidActorId() &&
+          systemInfo_.id != invalidActorId() &&
+          myId_.localId == LOCALID_START) ;
 
-    nextLocalActorId_ = LOCALID_START;
+    nextLocalActorId_ = LOCALID_START + 1;
 
+    /* Start the server */
     if (!handler) {
         handler.reset(new ServiceHandler(this));
     }
     server_.reset(new ReplicaActorServer(this, std::move(handler),
                                          FLAGS_serverthreads, myPort)); 
+
+    ALog(INFO) << "ActorSystem constructed";
 }
 
 ActorSystem::~ActorSystem()
@@ -78,8 +84,9 @@ void ActorSystem::registerWithConfigService() {
     using namespace apache::thrift::async;
     using namespace apache::thrift::transport;
 
+    TEventBase base;
     std::shared_ptr<TAsyncSocket> socket(
-        TAsyncSocket::newSocket(eventBase_, configIp_, configPort_));
+        TAsyncSocket::newSocket(&base, configIp_, configPort_));
     auto client_channel = HeaderClientChannel::newChannel(socket);
     std::unique_ptr<ConfigApiAsyncClient> client_(new ConfigApiAsyncClient(std::move(client_channel)));
 
@@ -87,6 +94,7 @@ void ActorSystem::registerWithConfigService() {
         client_->sync_registerActorSystem(myId_, systemInfo_);
     } catch (std::exception &e) {
         CHECK(false) << "Exception raised in registration.  " << e.what();
+        throw;
     }
     systemInfo_.id = myId_;
 }
@@ -97,8 +105,11 @@ void ActorSystem::initBehaviors_()
     initBehavior_ += {
         on(Init) >> [this]() {
             initConfigRemoteActor_();
+            #if 0
             sendRegisterMsg_();
-        },
+            #endif
+        }
+        #if 0
         on(RegisterResp) >> [this]() {
             auto &respPayload = payload<RegisterResp>();
             setId(respPayload.id);
@@ -106,6 +117,7 @@ void ActorSystem::initBehaviors_()
             ALog(INFO) << "Registration complete: " << systemInfo_;
             changeBehavior(&functionalBehavior_);
         }
+        #endif
     };
     functionalBehavior_ += {
         on(GetActorRegistry) >> [this]() {
@@ -175,6 +187,7 @@ Error ActorSystem::updateActorRegistry_(const ActorInfo &info, bool createActor)
 }
 
 void ActorSystem::sendRegisterMsg_() {
+#if 0
     ALog(INFO) << "Sending registration message";
 
     auto payload = std::make_shared<Register>();
@@ -182,6 +195,7 @@ void ActorSystem::sendRegisterMsg_() {
     auto msg = makeActorMsg<Register>(myId(), configActorId(), payload);
     // TODO: Check how routeToActor() is working here
     ROUTE(std::move(msg));
+#endif
 }
 
 void ActorSystem::initConfigRemoteActor_()

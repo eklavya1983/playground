@@ -74,19 +74,13 @@ struct UpdateActorInfo {
     1: ActorInfo info;
 }
 
+exception RegisterException {
+}
 /*-----------------------------------------------------------
  * Config messages 
  *-----------------------------------------------------------*/
-service ConfigApi {
-    ActorId registerActorSystem(1: ActorInfo info)
-}
-
-struct Register {
-    1: ActorInfo		systemInfo;
-}
-struct RegisterResp {
-    1: i32			error;
-    2: ActorId			id;
+service ConfigApi extends ServiceApi {
+    ActorId registerActorSystem(1: ActorInfo info) throws (1: RegisterException e)
 }
 
 /*-----------------------------------------------------------

@@ -42,11 +42,13 @@ bool ActorSystem::routeToActor(MsgT&& msg)
         /* During registration actor system won't have an id until registration complets.
          * Route RegisterResp directly to actor system
          */
+         #if 0
         if (myId_ == invalidActorId() &&
             msg.typeId() == ActorMsgTypeEnum<RegisterResp>::typeId) {
             ACTOR_SEND(getPtr(), std::forward<MsgT>(msg));
             return true;
         }
+        #endif
         CHECK(false) << "Failed to route message: " << msg;
         return false;
     }

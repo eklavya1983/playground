@@ -55,11 +55,15 @@ struct Actor : std::enable_shared_from_this<Actor> {
     virtual void send(ActorMsg &&msg) = 0;
     virtual void handle(ActorMsg &&msg);
 
-    virtual void dropMsg() = 0;
-    virtual void deferMsg() = 0;
+    template <class PayloadRetT>
+    std::shared_ptr<PayloadRetT> sendSync(Payload &&payload);
 
     template <class MsgT>
     void reply(Payload &&payload);
+
+    virtual void dropMsg() = 0;
+    virtual void deferMsg() = 0;
+
 
     inline ActorMsg* msg() {return curMsg_;}
     inline const int8_t& direction() const {return curMsg_->direction();}
@@ -71,6 +75,8 @@ struct Actor : std::enable_shared_from_this<Actor> {
     inline T& payload() {
         return curMsg_->payload<T>();
     }
+
+    inline RequestTracker* getTracker() { return tracker_; }
 
     /* Behavior related */
     bool isInitBehavior() const { return currentBehavior_ == &initBehavior_; }

@@ -89,6 +89,9 @@ struct ActorMsg {
     inline const T& payload() const {
         return *(reinterpret_cast<T*>(buf.get()));
     }
+    template <class T>
+    inline std::shared_ptr<T> buffer() const { return std::static_pointer_cast<T>(buf); }
+
     inline ActorMsg& payload(const Payload &buf) {
         this->buf = buf;
         return *this;
@@ -228,7 +231,7 @@ inline ActorMsg makeActorMsgCommon(const int8_t &direction,
 */
 template <class MsgT>
 inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
-                             std::shared_ptr<void> &&payload) {
+                             Payload &&payload) {
     return makeActorMsgCommon<MsgT>(MSGDIRECTION_NORMAL,
                                     from, to,
                                     ActorMsg::UNTRACKED_ID,
@@ -238,6 +241,11 @@ inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
 template <class MsgT>
 inline ActorMsg makeActorMsg() {
     return makeActorMsg<MsgT>(ActorId(), ActorId(), nullptr);
+}
+
+template <class MsgT>
+inline ActorMsg makeActorMsg(Payload &&payload) {
+    return makeActorMsg<MsgT>(ActorId(), ActorId(), std::move(payload));
 }
 }  // namesapce actor
 

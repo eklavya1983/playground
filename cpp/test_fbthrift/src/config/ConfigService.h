@@ -1,9 +1,15 @@
+#pragma once
 #include <actor/gen-cpp2/Service_constants.h>
 #include <actor/ActorSystem.hpp>
 
 namespace bhoomi {
 using namespace actor;
 using namespace actor::cpp2;
+
+struct Register : LocalPayload<> {
+    std::unique_ptr<::actor::cpp2::ActorInfo> info;
+    folly::Promise<ActorId> promise;
+};
 
 struct ConfigService : ActorSystem {
     ConfigService(const std::string &configIp,
