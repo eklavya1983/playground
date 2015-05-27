@@ -5,25 +5,40 @@ namespace actor {
 
 using namespace cpp2;
 
-template<class ActorT, class ... ArgsT>
-ActorPtr ActorSystem::spawnRootActor(ArgsT&&... args) {
-    CHECK(nextLocalActorId_ == LOCALID_START);
-    CHECK(actorTbl_.size() == 0);
-    return spawnActor<ActorT>(std::forward<ArgsT>(args)...);
-}
-
+#if 0
 template<class ActorT, class ... ArgsT>
 ActorPtr ActorSystem::spawnActor(ArgsT&&... args)
 {
+    auto eb = system_->getEventBase();
+    CHECK(eb != nullptr);
+    ActorPtr a = std::make_shared<ActorT>(this,
+                                          getNextEventBase(),
+                                          std::forward<ArgsT>(args)...);
+    auto future = via(eb).then([this, &a, eb]() {
+        DCHECK(eb->isInEventBaseThread());
+        ActorId id;
+        id.systemId = myId().systemId;
+        id.localId = nextLocalActorId_++;
+        a->setId(id);
+        actorTbl_.insert(std::make_pair(toInt64(id), a));
+        a->init();
+    });
+    future.wait();
+    return a;
+}
+#endif
+template<class ActorT, class ... ArgsT>
+std::shared_ptr<ActorT> ActorSystem::spawnActor(ArgsT&&... args)
+{
+    std::shared_ptr<ActorT> a = std::make_shared<ActorT>(this,
+                                          getNextEventBase(),
+                                          std::forward<ArgsT>(args)...);
     ActorId id;
-
-    ActorPtr a = std::make_shared<ActorT>(this, getNextEventBase(), std::forward<ArgsT>(args)...);
     id.systemId = myId().systemId;
     id.localId = nextLocalActorId_++;
     a->setId(id);
     actorTbl_.insert(std::make_pair(toInt64(id), a));
     a->init();
-
     return a;
 }
 

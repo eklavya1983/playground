@@ -17,6 +17,12 @@ ActorSystem::ActorSystem()
 {
 }
 
+ActorSystem::ActorSystem(const ActorSystemId &id)
+    : ActorSystem({apache::thrift::FRAGILE, id, LOCALID_START},
+                  "test", nullptr, 0, "0", 0)
+{
+}
+
 ActorSystem::ActorSystem(const ActorId &id,
                          const std::string &systemType,
                          std::unique_ptr<ServiceApiSvIf> handler,
@@ -31,7 +37,9 @@ ActorSystem::ActorSystem(const ActorId &id,
 {
     /* Set up threadpools so work can be done */
     ioThreadPool_ = std::make_shared<folly::wangle::IOThreadPoolExecutor>(FLAGS_actorthreads);
-    setEventBase(getNextEventBase());
+    /* Set my event base immediately */
+    auto eb = getNextEventBase();
+    setEventBase(eb);
 
     configIp_ = configIp;
     configPort_ = configPort;
@@ -46,15 +54,16 @@ ActorSystem::ActorSystem(const ActorId &id,
     /* Do registration if required */
     if (id == invalidActorId()) {
         systemInfo_.id = invalidActorId();
-        registerWithConfigService();
+        registerWithConfigService_();
     } else {
         /* No need to register.  We will assign an id */
         myId_ = id;
         systemInfo_.id = myId_;
     }
-    CHECK(myId_ != invalidActorId() &&
-          systemInfo_.id != invalidActorId() &&
-          myId_.localId == LOCALID_START) ;
+    DCHECK(myId_ != invalidActorId() &&
+           systemInfo_.id != invalidActorId() &&
+           myId_.localId == LOCALID_START) ;
+    DCHECK(systemInfo_.id == myId_);
 
     nextLocalActorId_ = LOCALID_START + 1;
 
@@ -71,14 +80,19 @@ ActorSystem::ActorSystem(const ActorId &id,
 ActorSystem::~ActorSystem()
 {
     server_->stop();
+    ALog(INFO) << "ActorSystem destructed";
 }
 
 void ActorSystem::init() {
     CHECK(this == system_);
+
+    /* We need to add ourself in to actorTbl so messages can be routed */
+    actorTbl_.insert(std::make_pair(toInt64(myId_), getPtr()));
+
     NotificationQueueActor::init();
 }
 
-void ActorSystem::registerWithConfigService() {
+void ActorSystem::registerWithConfigService_() {
 
     using namespace apache::thrift;
     using namespace apache::thrift::async;
@@ -104,8 +118,8 @@ void ActorSystem::initBehaviors_()
     NotificationQueueActor::initBehaviors_();
     initBehavior_ += {
         on(Init) >> [this]() {
-            initConfigRemoteActor_();
             #if 0
+            initConfigRemoteActor_();
             sendRegisterMsg_();
             #endif
         }

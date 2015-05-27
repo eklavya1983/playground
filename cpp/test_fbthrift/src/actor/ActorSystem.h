@@ -13,6 +13,7 @@ namespace actor {
 struct ActorSystem : NotificationQueueActor {
     /* Life cycle */
     ActorSystem();
+    ActorSystem(const ActorSystemId &id);
     ActorSystem(const ActorId &id,
                 const std::string &systemType,
                 std::unique_ptr<ServiceApiSvIf> handler,
@@ -24,25 +25,8 @@ struct ActorSystem : NotificationQueueActor {
     virtual void init() override;
 
     /**
-    * @brief Registers with configuration servicer.  Registration is performed in synchronous
-    * manner
-    */
-    virtual void registerWithConfigService();
-
-    /**
-    * @brief Spawn root actor
-    *
-    * @tparam ActorT
-    * @tparam ArgsT
-    * @param args
-    *
-    * @return 
-    */
-    template<class ActorT, class ... ArgsT>
-    ActorPtr spawnRootActor(ArgsT&&... args);
-
-    /**
     * @brief Spawn the actor
+    * No need to be executed under event base
     *
     * @tparam T
     * @tparam ArgsT
@@ -51,19 +35,17 @@ struct ActorSystem : NotificationQueueActor {
     * @return 
     */
     template<class ActorT, class ... ArgsT>
-    ActorPtr spawnActor(ArgsT&&... args);
+    std::shared_ptr<ActorT> spawnActor(ArgsT&&... args);
 
     /**
     * @brief Return referece to the actor based on actor id
-    *
-    * @param id
-    *
-    * @return 
+    * No need to be executed under event base
     */
     ActorPtr lookUpActor(const ActorId &id);
 
     /**
     * @brief Route message of type ActorMsg.  It's templated to use perferct forwarding
+    * No need to be executed under event base
     *
     * @tparam MsgT must be ActorMsg
     * @param msg
@@ -105,6 +87,7 @@ struct ActorSystem : NotificationQueueActor {
 
 
  protected:
+    virtual void registerWithConfigService_();
     virtual void initBehaviors_() override;
     virtual ActorPtr createRemoteActor_(const ActorInfo &info);
     virtual Error updateActorRegistry_(const ActorInfo &info, bool createActor);

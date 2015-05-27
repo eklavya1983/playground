@@ -1,12 +1,15 @@
 #include <util/Log.h>
 #include <actor/ActorUtil.h>
+#include <actor/ActorSystem.hpp>
 #include <actor/ActorRequest.h>
 
 namespace actor {
 
 RequestIf::RequestIf() {
     id_ = ActorMsg::UNTRACKED_ID;
+    from_ = ActorSystem::invalidActorId();
     timeoutMs_ = 0;
+    payloadTypeId_ = ActorMsg::INVALID_MSGTYPEID;
     payload_ = nullptr;
     tracker_ = nullptr;
 }
@@ -24,23 +27,34 @@ void RequestIf::setTracker(RequestTracker *tracker) {
 }
 
 ActorRequest& ActorRequest::toActor(const ActorId &id) {
+    to_ = id;
     return *this;
 }
 
-folly::Future<RequestPtr<ActorRequest>> ActorRequest::fire() {
+folly::Future<void> ActorRequest::fire() {
+    DCHECK(from_ != ActorSystem::invalidActorId());
+    DCHECK(to_ != ActorSystem::invalidActorId());
+
+    ActorMsg msg;
+    msg.typeId(payloadTypeId_)
+        .from(from_)
+        .to(to_)
+        .requestId(id_)
+        .payload(payload_);
+
+    auto system_ = tracker_->system();
+    ROUTE(std::move(msg));
+
     return promise_.getFuture();
 }
 
-template<class InT, class OutT>
-std::unique_ptr<OutT> dynamic_unique_ptr_cast(std::unique_ptr<InT>& in) {
-    std::unique_ptr<OutT> out(reinterpret_cast<OutT*>(in.release()));
-    return out;
-}
-
 void ActorRequest::handleResponse(ActorMsg &&msg) {
+    // TODO: Handle
+    // 1. Errors
+    // 2. Same resonse
     respMsg_ = std::move(msg);
-    auto req = tracker_->removeRequest(id_);
-    promise_.setValue(dynamic_unique_ptr_cast<RequestIf, ActorRequest>(req));
+    promise_.setValue();
+    tracker_->removeRequest(id_);
 }
 
 QuorumRequest::QuorumRequest()
@@ -58,7 +72,7 @@ QuorumRequest& QuorumRequest::toActors(const std::vector<ActorId> &ids) {
     return *this;
 }
 
-folly::Future<RequestPtr<QuorumRequest>> QuorumRequest::fire() {
+folly::Future<void> QuorumRequest::fire() {
     return promise_.getFuture();
 }
 
@@ -72,8 +86,10 @@ void QuorumRequest::handleResponse(ActorMsg &&msg) {
     // todo: set the promise
 }
 
-RequestTracker::RequestTracker()
+RequestTracker::RequestTracker(ActorSystem *system, folly::EventBase *eb)
  : nextRequestId_(ActorMsg::UNTRACKED_ID + 1) {
+    system_ = system;
+    eb_ = eb;
 }
 
 RequestId RequestTracker::incrRequestId_() {
@@ -81,22 +97,24 @@ RequestId RequestTracker::incrRequestId_() {
 }
 
 void RequestTracker::addRequest(RequestPtr<RequestIf> &&req) {
+    DCHECK(eb_->isInEventBaseThread());
     auto id = incrRequestId_();
     req->setId(id);
-    table_[incrRequestId_()] = std::move(req);
+    table_[id] = std::move(req);
 }
 
-RequestPtr<RequestIf> RequestTracker::removeRequest(const RequestId &id) {
-    auto itr = table_.find(id);
-    RequestPtr<RequestIf> req = std::move(itr->second);
-    table_.erase(itr);
-    return req;
+void RequestTracker::removeRequest(const RequestId &id) {
+    DCHECK(eb_->isInEventBaseThread());
+    size_t ret = table_.erase(id);
+    DCHECK(ret == 1);
 }
 
 void RequestTracker::handleResponse(ActorMsg &&msg) {
+    DCHECK(eb_->isInEventBaseThread());
     auto itr = table_.find(msg.requestId());
     if (itr == table_.end()) {
         LOG(WARNING) << "Request not found. Dropping message: " << msg;
+        DCHECK(false);
         return;
     }
     itr->second->handleResponse(std::move(msg));

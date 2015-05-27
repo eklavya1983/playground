@@ -10,8 +10,8 @@ struct Pong : LocalPayload<> {};
 struct SendPing : LocalPayload<> {
     ActorId to;
 };
-struct SendQuorumPing : LocalPayload<> {
-    std::vector<ActorId> toActors;
+struct SendPingReq : LocalPayload<> {
+    ActorId to;
 };
 
 /**
@@ -24,6 +24,7 @@ struct PingPongActor : NotificationQueueActor {
 
     int32_t         pingCnt = 0;
     int32_t         pongCnt = 0;
+    int32_t         trackedPongCnt = 0;
  protected:
     virtual void initBehaviors_() override {
         NotificationQueueActor::initBehaviors_();
@@ -48,17 +49,15 @@ struct PingPongActor : NotificationQueueActor {
                 ROUTE(makeActorMsg<Ping>(myId(), payload<SendPing>().to,
                                          std::make_shared<Ping>()));
             },
-            on(SendQuorumPing) >> [this]() {
-                auto& req = tracker_->allocRequest<QuorumRequest>();
-                auto completeCb = [this](const Error &e, QuorumRequest &q) {
-                    if (e == Error::ERR_OK) {
-                        pongCnt += q.ackSuccessCnt();
-                    }
-                };
-                req.toActors(payload<SendQuorumPing>().toActors)
-                    .withQuorum(payload<SendQuorumPing>().toActors.size())
-                    .withCompletionCb(completeCb)
-                    .fire();
+            on(SendPingReq) >> [this]() {
+                auto req = tracker_->allocRequest<ActorRequest>();
+                req->from(myId_)
+                    .toActor(payload<SendPingReq>().to)
+                    .withPayload(std::make_shared<Ping>())
+                    .fire()
+                    .then([req, this]() {
+                        trackedPongCnt++;
+                    });
             }
         };
     }

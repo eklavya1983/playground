@@ -50,13 +50,11 @@ struct Actor : std::enable_shared_from_this<Actor> {
     void setId(const ActorId &id);
     inline const ActorId& myId() const {return myId_;}
 
-    virtual void changeBehavior(Behavior *behavior);
-
     virtual void send(ActorMsg &&msg) = 0;
     virtual void handle(ActorMsg &&msg);
 
-    template <class PayloadRetT>
-    std::shared_ptr<PayloadRetT> sendSync(Payload &&payload);
+    template <class PayloadInT, class PayloadRetT>
+    std::shared_ptr<PayloadRetT> sendSync(PayloadPtr<PayloadInT> &&payload);
 
     template <class MsgT>
     void reply(Payload &&payload);
@@ -76,9 +74,11 @@ struct Actor : std::enable_shared_from_this<Actor> {
         return curMsg_->payload<T>();
     }
 
+    inline ActorSystem* system() {return system_;}
     inline RequestTracker* getTracker() { return tracker_; }
 
     /* Behavior related */
+    virtual void changeBehavior(Behavior *behavior);
     bool isInitBehavior() const { return currentBehavior_ == &initBehavior_; }
     bool isFunctionalBehavior() const { return currentBehavior_ == &functionalBehavior_; }
     void dumpBehaviors();
@@ -93,7 +93,8 @@ struct Actor : std::enable_shared_from_this<Actor> {
     /* Counters.  Exposed for testing */
     int32_t                             droppedCntr;
     int32_t                             deferredCntr;
-protected:
+
+ protected:
     virtual void initBehaviors_();
 
 
@@ -118,9 +119,25 @@ using ActorQueue = folly::NotificationQueue<ActorMsg>;
 struct NotificationQueueActor : Actor, ActorQueue::Consumer {
     using Actor::Actor;
     explicit NotificationQueueActor(ActorSystem *system, folly::EventBase *eventBase);
+    virtual ~NotificationQueueActor();
+    /**
+    * @brief Registers event fd with event loop.  After this point actor will process messages
+    * given event loop started.
+    * NOTE: event loop must be started (i.e calling loop() or vairants of it) 
+    * by the user.
+    */
     virtual void init() override;
     
+    /**
+    * @brief This function is exposed because NotificationQueue doesn't expose such a function.
+    * For NotificationQueue eventbase is set via startConsuming() methods which takes place inside
+    * init() function.  It's desirable to decouple having to set eventBase as part of init.
+    * That's why this function is created.
+    * @param eventBase
+    */
     void setEventBase(folly::EventBase *eventBase);
+    folly::EventBase* getEventBase();
+
     virtual void send(ActorMsg &&msg) override;
     virtual void messageAvailable(ActorMsg &&msg) override;
 

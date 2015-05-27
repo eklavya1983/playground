@@ -9,7 +9,9 @@ namespace actor {
 
 using namespace cpp2;
 
-using Payload = std::shared_ptr<void>;
+template<typename T>
+using PayloadPtr = std::shared_ptr<T>;
+using Payload = PayloadPtr<void>;
 // using ActorMsg = std::pair<ActorMsgHeader, Payload>;
 
 /**
@@ -90,7 +92,7 @@ struct ActorMsg {
         return *(reinterpret_cast<T*>(buf.get()));
     }
     template <class T>
-    inline std::shared_ptr<T> buffer() const { return std::static_pointer_cast<T>(buf); }
+    inline PayloadPtr<T> buffer() const { return std::static_pointer_cast<T>(buf); }
 
     inline ActorMsg& payload(const Payload &buf) {
         this->buf = buf;
@@ -204,15 +206,15 @@ const char* actorMsgName(ActorMsgTypeId id);
 *
 * @return 
 */
-template <class MsgT>
 inline ActorMsg makeActorMsgCommon(const int8_t &direction,
+                                   const ActorMsgTypeId &typeId,
                                    const ActorId &from,
                                    const ActorId &to,
                                    const RequestId &requestId,
                                    std::shared_ptr<void> &&payload) {
     ActorMsg msg;
     msg.direction(direction)
-        .typeId(ActorMsgTypeEnum<MsgT>::typeId)
+        .typeId(typeId)
         .from(from)
         .to(to)
         .requestId(requestId)
@@ -232,10 +234,11 @@ inline ActorMsg makeActorMsgCommon(const int8_t &direction,
 template <class MsgT>
 inline ActorMsg makeActorMsg(const ActorId &from, const ActorId &to,
                              Payload &&payload) {
-    return makeActorMsgCommon<MsgT>(MSGDIRECTION_NORMAL,
-                                    from, to,
-                                    ActorMsg::UNTRACKED_ID,
-                                    std::move(payload));
+    return makeActorMsgCommon(MSGDIRECTION_NORMAL,
+                              ActorMsgTypeEnum<MsgT>::typeId,
+                              from, to,
+                              ActorMsg::UNTRACKED_ID,
+                              std::move(payload));
 }
 
 template <class MsgT>

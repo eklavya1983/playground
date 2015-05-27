@@ -35,8 +35,6 @@ ConfigService::ConfigService(const std::string &configIp,
 }
 
 void ConfigService::init() {
-    /* We need to add ourself in to actorTbl so messages can be routed */
-    actorTbl_.insert(std::make_pair(toInt64(myId_), getPtr()));
     ActorSystem::init();
 }
 

@@ -22,10 +22,11 @@ Actor::Actor(ActorSystem *system)
 }
 
 Actor::~Actor() {
+    ALog(INFO) << "Actor destructed";
 }
 
 void Actor::init() {
-    ALog(INFO);
+    ALog(INFO) << "Actor inited";
     initBehaviors_();
     dumpBehaviors();
     if (currentBehavior_ == nullptr) {
@@ -103,8 +104,18 @@ NotificationQueueActor::NotificationQueueActor(ActorSystem *system,
     setEventBase(eventBase);
 }
 
+NotificationQueueActor::~NotificationQueueActor() {
+    delete tracker_;
+}
+
 void NotificationQueueActor::init() {
     Actor::init();
+
+    /* Creating the tracker here.  Ideally w'd have one tracker per eventbase and it
+     * will be set by the ActorSystem.
+     * For simplicity we'll have a tracker per actor.  
+     */
+    tracker_ = new RequestTracker(system_, eventBase_);
 
     ALog(INFO) << " Eventbase set to: " << eventBase_;
     CHECK(eventBase_ != nullptr); 
@@ -115,6 +126,10 @@ void NotificationQueueActor::init() {
 
 void NotificationQueueActor::setEventBase(folly::EventBase *eventBase) {
     eventBase_ = eventBase;
+}
+
+folly::EventBase* NotificationQueueActor::getEventBase() {
+    return eventBase_;
 }
 
 void NotificationQueueActor::send(ActorMsg &&msg) {
