@@ -1,0 +1,16 @@
+Principles
+-decouple modules
+-swappable modules.  Implement an interface
+-no globals
+-try to minimize dependency on config service.  If config service is down, only config paths should be impacted.
+
+-On volume create, decide on which replicas will hold the volume
+-Volume config channel
+--Single publisher, multiple-subscriber.  One way flow from publisher to subscribers.
+--sequence id for config channel.  Can be same as # of entries pushed into the channel.
+--getCurrentVolumeConfig returns current volume config at current sequence id
+
+Ideas
+-Using kafka as a temp store for logging operations for a particular group when service is down
+-
+

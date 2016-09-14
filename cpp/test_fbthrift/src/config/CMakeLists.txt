@@ -8,3 +8,4 @@ include_directories(.)
 
 add_executable(configservice ConfigService.cpp)
 target_link_libraries(configservice actor ${COMMON_LIBS})
+install(TARGETS configservice DESTINATION bin)

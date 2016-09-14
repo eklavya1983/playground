@@ -38,7 +38,6 @@ struct ServiceHandler : virtual ::actor::cpp2::ServiceApiSvIf {
     friend struct ActorServer;
 };
 
-
 struct ReplicaActorServer : ActorServer {
     ReplicaActorServer(ActorSystem *system, int nIoThreads, int port);
     ReplicaActorServer(ActorSystem *system,

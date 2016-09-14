@@ -26,6 +26,10 @@ set(FBTHRIFT_LIB_DIRS
 set(GTEST_INCLUDE_DIRS ${TOPDIR}/gtest-1.7.0/include)
 set(GTEST_LIB_DIRS ${TOPDIR}/gtest-1.7.0/lib/.libs)
 
+# zookeeper related variables
+set(ZOOKEEPER_INCLUDE_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/include ${TOPDIR}/zookeeper-3.4.9/src/c/generated)
+set(ZOOKEEPER_LIB_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/.libs)
+
 # Common set of libraries to link for binaries
 set(COMMON_LIBS actor thriftcpp2 thrift folly glog gflags pthread boost_system double-conversion z)
 
