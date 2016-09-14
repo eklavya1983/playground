@@ -7,6 +7,26 @@
 
 using namespace folly;
 using namespace std;
+int getInt();
+
+thread_local int tInt = getInt();
+
+int getInt() {
+    return tInt;
+}
+
+TEST(thread, create) {
+    tInt = 10;
+    std::thread t([]() {
+                  std::cout << "tInt: " << tInt;
+                  });
+    /*
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    */
+    t.join();
+}
 
 TEST(Future, basic) {
     Promise<int> p;

@@ -31,7 +31,7 @@ set(ZOOKEEPER_INCLUDE_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/include ${TOPDIR}/zoo
 set(ZOOKEEPER_LIB_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/.libs)
 
 # Common set of libraries to link for binaries
-set(COMMON_LIBS actor thriftcpp2 thrift folly glog gflags pthread boost_system double-conversion z)
+set(COMMON_LIBS thriftcpp2 thrift folly glog gflags pthread boost_system double-conversion z)
 
 # Common set of libraries to link for tests 
 set(COMMON_TEST_LIBS gtest ${COMMON_LIBS})

@@ -1,3 +1,14 @@
+TODO
+-Clean up log statements in zkadpater
+-Code zookeeper key, value store
+-Unit test to test zookeeper key value store
+-
+
+CMake
+-Generate youcompleteme flags
+
+Done
+-Create Log macro called CLog (context log)
 -Try out few examples of using futures
 -Look into kafka c++ client
 
@@ -11,3 +22,9 @@ MS2
 --service down
 --coordination service down
 
+
+Coding guidelines
+-Minmize usage of locks.  Use thread based synchronization provided by actor model
+-Not much code in constructor. Just assign memeber variables.  Do all initialization code in
+ init() method
+-User CLog macro for logging.  This wrapper macro on glog macro logs context as well.  Useful in in unit tests that run multiple services in the same addressspace.

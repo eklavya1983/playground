@@ -26,8 +26,11 @@ struct KVStore {
     folly::Future<T> getCurrent(const std::string &key);
 
     virtual std::string getCachedValue(const std::string &key) = 0;
-    virtual folly::Future<std::string> getCurrentValue(const std::string &key);
-    virtual void watchKey(const std::string &key, const WatchCb &cb) = 0;
+    virtual folly::Future<std::string> getCurrentValue(const std::string &key) = 0;
+
+    virtual folly::Future<folly::Unit> put(const std::string &key, const std::string &value) = 0;
+
+    virtual void watch(const std::string &key, const WatchCb &cb) = 0;
 };
 
 }  // namespace cluster
