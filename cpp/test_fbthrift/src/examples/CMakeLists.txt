@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project("examples")
 
+#add_subdirectory(actor)
+#add_subdirectory(config)
+#add_subdirectory(data)
+
 # External dependency include directories
 include_directories(${GTEST_INCLUDE_DIRS} ${ZOOKEEPER_INCLUDE_DIRS} .)
 link_directories(${GTEST_LIB_DIRS} ${ZOOKEEPER_LIB_DIRS}) 
