@@ -13,7 +13,7 @@ class Future;
 struct Unit;
 }
 
-namespace cluster {
+namespace infra {
 
 /**
  * @brief Connection exception
@@ -64,4 +64,4 @@ struct ZookeeperClient {
     zhandle_t                                       *zh_ {nullptr};
 };
 
-}  // namespace cluster
+}  // namespace infra

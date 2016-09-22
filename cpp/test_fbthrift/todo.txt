@@ -1,13 +1,36 @@
-TODO
+Now
+-Organize where stuff gets installed.  Create lib and binary folders
+
+Infrastructure
 -Clean up log statements in zkadpater
--Code zookeeper key, value store
--Unit test to test zookeeper key value store
--
+-DataomException class that takes in status
+-Status to error string
+
+Service
+-Pull service map
+-Bring up other services
+-Register and process events up to our current point
+-Publish service up message
+
+Configservice
+-Zookeeper in memory testing
+-Test zookeeper config service
+-Code up setup config param
+-Code up list spheres
+-Code up add node
+-Code up add service
 
 CMake
+-include java compilation
+-Organize where stuff gets installed.  Create lib and binary folders
 -Generate youcompleteme flags
 
+Epics
+-Authentication webserver, zookeeper
+
 Done
+-code up status codes in thrift
+-Code zookeeper put,get and unit test
 -Create Log macro called CLog (context log)
 -Try out few examples of using futures
 -Look into kafka c++ client

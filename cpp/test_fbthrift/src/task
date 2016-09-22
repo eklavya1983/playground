@@ -1,0 +1,37 @@
+#!/bin/bash
+#set -e
+#set -x
+
+SRC=$(pwd)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+function loginfo {
+    printf "${GREEN}$@${NC}\n"
+}
+
+function logwarn {
+    printf "${RED}$@${NC}\n"
+}
+
+function compile {
+    cd $SRC/../build
+    cmake -DCMAKE_INSTALL_PREFIX="." ..
+    make && make install
+}
+
+function clean {
+    set -x
+    rm -rf $SRC/../build/*
+    set +x
+}
+
+function install {
+    cd $SRC/../build
+    cmake -DCMAKE_INSTALL_PREFIX="/opt/datom" ..
+    make && make install
+}
+
+# call arguments verbatim:
+$@

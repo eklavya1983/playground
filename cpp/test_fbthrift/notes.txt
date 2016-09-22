@@ -1,3 +1,7 @@
+Zookeeper
+-sessions are maintained on server side.  When client is partitioned, client isn't notified of session expiration.  It's disconnected.  Once it connects back in, session is expired.
+
+FBThrift
 Cpp2Worker
 -Implements Acceptor which has callbacks around when a connection is created etc.
 -Manages bunch of cpp2 connections

@@ -1,4 +1,4 @@
-#include <cluster/ZookeeperClient.h>
+#include <infra/ZookeeperClient.h>
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
 #include <folly/Format.h>
@@ -33,14 +33,14 @@ struct ZKHelper {
 
 TEST(ZookeeperClient, init_without_zk)
 {
-    cluster::ZookeeperClient client("test", "localhost:2181");
-    ASSERT_THROW(client.init(), cluster::ZookeeperException);
+    infra::ZookeeperClient client("test", "localhost:2181");
+    ASSERT_THROW(client.init(), infra::ZookeeperException);
 }
 
 TEST(ZookeeperClient, init)
 {
     ZKHelper h;
-    cluster::ZookeeperClient client("test", "localhost:2181");
+    infra::ZookeeperClient client("test", "localhost:2181");
     ASSERT_NO_THROW(client.init());
 
     auto putResult = client.put("/keys", "keys");

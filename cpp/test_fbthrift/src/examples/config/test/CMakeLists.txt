@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
 project("test")
 
 # Here add_unit_test is coming actor/test/CMakefiles.txt

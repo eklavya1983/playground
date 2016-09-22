@@ -1,4 +1,4 @@
-#include <cluster/ZookeeperClient.h>
+#include <infra/ZookeeperClient.h>
 #include <zookeeper.h>
 #include <chrono>
 #include <thread>
@@ -15,7 +15,7 @@ static void stringCompletionCb(int rc,
 
     if (rc != ZOK) {
         LOG(WARNING) << "stringCompletionCb error: " << zerror(rc);
-        promise->setException(cluster::ZookeeperException(rc));
+        promise->setException(infra::ZookeeperException(rc));
     } else {
         promise->setValue(std::string(value));
     }
@@ -27,7 +27,7 @@ static void dataCompletionCb(int rc, const char *value, int value_len,
     StringPromise *promise = const_cast<StringPromise*>(reinterpret_cast<const StringPromise*>(data));
     if (rc != ZOK) {
         LOG(WARNING) << "dataCompletionCb error: " << zerror(rc);
-        promise->setException(cluster::ZookeeperException(rc));
+        promise->setException(infra::ZookeeperException(rc));
     } else {
         // std::string strVal(value, value_len);
         std::string strVal("keys", 4);
@@ -36,7 +36,7 @@ static void dataCompletionCb(int rc, const char *value, int value_len,
     delete promise;
 }
 
-namespace cluster {
+namespace infra {
 
 
 void ZookeeperClient::watcherFn(zhandle_t *zh,
@@ -162,4 +162,4 @@ folly::Future<std::string> ZookeeperClient::get(const std::string &key)
     return future;
 }
 
-}  // namespace cluster
+}  // namespace infra
