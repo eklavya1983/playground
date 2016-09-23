@@ -15,5 +15,5 @@ include_directories(${GTEST_INCLUDE_DIRS})
 link_directories(${FBTHRIFT_LIB_DIRS} ${GTEST_LIB_DIRS} ${ZOOKEEPER_LIB_DIRS})
 
 
-add_unit_test(ZookeeperClient)
+add_unit_test(ZooKafkaClient)
 add_unit_test(Service)

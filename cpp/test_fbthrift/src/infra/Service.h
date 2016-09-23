@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <infra/gen/commontypes_types.h>
 
 namespace apache { namespace thrift { namespace server {
 class TNonblockingServer;
@@ -8,21 +9,16 @@ class TNonblockingServer;
 
 namespace infra {
 
-struct ZookeeperClient;
-struct KafkaClient;
 struct ServiceServer;
+struct CoordinationClient;
 
 /**
  * @brief Base Service class
  */
-template<class ConfigurationClientT = ZookeeperClient,
-        class PubSubClientT = KafkaClient>
 struct Service {
     Service(const std::string &logContext,
-            const std::string &serviceId,
-            const std::string &ip,
-            const int32_t &port,
-            const std::string &zkServers);
+            const ServiceInfo &info,
+            const std::shared_ptr<CoordinationClient> &coordinationClient);
     virtual ~Service();
     Service(const Service&) = delete;
     void operator=(Service const &) = delete;
@@ -35,18 +31,18 @@ struct Service {
         return logContext_;
     }
 
+    static Service* newDefaultService(const std::string &logContext,
+                                      const ServiceInfo &info,
+                                      const std::string &zkServers);
+
  protected:
-    virtual void initConfigurationClient_();
-    virtual void initPubSub_();
+    virtual void initCoordinationClient_();
     virtual void initServer_();
 
     std::string                                 logContext_;
-    std::string                                 serviceId_;
-    std::string                                 ip_;
-    int32_t                                     port_;
-    /* Configuration db client like zookeeper */
-    std::shared_ptr<ConfigurationClientT>       configClient_;
-    /* Kafka client */
+    ServiceInfo                                 serviceInfo_;
+    /* client for coordination services */
+    std::shared_ptr<CoordinationClient>        coordinationClient_;
 
     /* Server */
     std::shared_ptr<ServiceServer>              server_;

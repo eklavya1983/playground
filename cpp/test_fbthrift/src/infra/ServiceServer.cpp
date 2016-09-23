@@ -23,19 +23,6 @@ ServiceServer::ServiceServer(const std::string &logContext,
     server_.reset(new apache::thrift::ThriftServer("disabled", false));
     server_->setPort(port_);
     server_->setInterface(handler);
-    // TODO(Rao): Configure the server
-    // server_->setIOThreadPool(system_->getIOThreadPool());
-    server_->setNWorkerThreads(2);
-
-    std::shared_ptr<apache::thrift::concurrency::PosixThreadFactory> threadFactory(
-        new apache::thrift::concurrency::PosixThreadFactory);
-    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager =
-      apache::thrift::concurrency::ThreadManager::newSimpleThreadManager(2);
-    threadManager->threadFactory(threadFactory);
-    threadManager->start();
-
-    server_->setThreadManager(threadManager);
-    // server_->setNPoolThreads(2);
 }
 
 void ServiceServer::start() {
@@ -57,6 +44,19 @@ void ServiceServer::start() {
         serverThread_ = new apache::thrift::util::ScopedServerThread(server_);
     }
 #endif
+    // TODO(Rao): Configure the server
+    // server_->setIOThreadPool(system_->getIOThreadPool());
+    server_->setNWorkerThreads(2);
+
+    std::shared_ptr<apache::thrift::concurrency::PosixThreadFactory> threadFactory(
+        new apache::thrift::concurrency::PosixThreadFactory);
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager =
+      apache::thrift::concurrency::ThreadManager::newSimpleThreadManager(2);
+    threadManager->threadFactory(threadFactory);
+    threadManager->start();
+
+    server_->setThreadManager(threadManager);
+    // server_->setNPoolThreads(2);
     server_->serve();
 }
 

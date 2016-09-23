@@ -7,7 +7,7 @@ Adding nodes
 
 Service bootup
 -Service will have following args
---nic_if, root, port
+--nic_if, root, port, domain_name, service_name
 -At root we expect json file with node information validated by config service.  This will contain node name for now
 -
 

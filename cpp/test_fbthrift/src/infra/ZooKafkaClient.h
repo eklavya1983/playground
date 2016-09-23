@@ -2,15 +2,10 @@
 
 #include <string>
 #include <stdexcept>
+#include <infra/CoordinationClient.h>
 
 extern "C" {
 typedef struct _zhandle zhandle_t;
-}
-
-namespace folly {
-template <class T>
-class Future;
-struct Unit;
 }
 
 namespace infra {
@@ -29,9 +24,9 @@ struct ZookeeperException : std::exception {
 };
 
 /**
- * @brief C++ zookeeper client
+ * @brief C++ zookeeper kafka client
  */
-struct ZookeeperClient {
+struct ZooKafkaClient : CoordinationClient {
     /* Maximum connection retries against zookeeper servers */
     const static int MAX_CONN_TRIES = 1;
     static void watcherFn(zhandle_t *zh,
@@ -39,9 +34,9 @@ struct ZookeeperClient {
                           int state,
                           const char *path,
                           void *watcherCtx);
-    ZookeeperClient(const std::string &logContext,
+    ZooKafkaClient(const std::string &logContext,
                     const std::string& servers);
-    ~ZookeeperClient();
+    ~ZooKafkaClient();
     void init();
     void close();
 
@@ -50,7 +45,7 @@ struct ZookeeperClient {
     void watcher(int type, int state, const char *path);
 
     folly::Future<std::string> put(const std::string &key, const std::string &value);
-    folly::Future<std::string> get(const std::string &key);
+    folly::Future<VersionedData> get(const std::string &key);
 
     std::string typeToStr(int type);
     std::string stateToStr(int state);

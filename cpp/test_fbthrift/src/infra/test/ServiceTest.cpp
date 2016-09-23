@@ -6,7 +6,8 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <thrift/lib/cpp/async/TEventBase.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
-#include <infra/Service.tcc>
+#include <infra/Service.h>
+#include <infra/gen/gen-cpp2/ServiceApi.h>
 #include <boost/cast.hpp>
 
 using namespace apache::thrift::async;
@@ -14,9 +15,13 @@ using namespace apache::thrift;
 
 TEST(Service, testserver)
 {
-    infra::Service<> s("test", "service1", "localhost", 8082, "");
-    s.init();
-    std::thread t([&s]() { s.run(); });
+    infra::ServiceInfo info;
+    info.id = "service1";
+    info.ip = "localhost";
+    info.port = 8082;
+    infra::Service *s = infra::Service::newDefaultService("test", info, "");
+    s->init();
+    std::thread t([s]() { s->run(); });
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
     TEventBase base;
@@ -38,7 +43,7 @@ TEST(Service, testserver)
     client.sync_getModuleState(response, {});
     EXPECT_EQ(response, "ok");
 
-    s.shutdown();
+    s->shutdown();
 #if 0
     client.sync_getModuleState(response, {});
     EXPECT_EQ(response, "ok");
@@ -56,6 +61,7 @@ TEST(Service, testserver)
 #endif
 
   t.join();
+  delete s;
 }
 
 #if 0

@@ -1,4 +1,5 @@
-#include <infra/ZookeeperClient.h>
+#include <infra/ZooKafkaClient.h>
+#include <infra/gen/commontypes_types.h>
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
 #include <folly/Format.h>
@@ -31,16 +32,16 @@ struct ZKHelper {
     }
 };
 
-TEST(ZookeeperClient, init_without_zk)
+TEST(ZooKafkaClient, init_without_zk)
 {
-    infra::ZookeeperClient client("test", "localhost:2181");
+    infra::ZooKafkaClient client("test", "localhost:2181");
     ASSERT_THROW(client.init(), infra::ZookeeperException);
 }
 
-TEST(ZookeeperClient, init)
+TEST(ZooKafkaClient, init)
 {
     ZKHelper h;
-    infra::ZookeeperClient client("test", "localhost:2181");
+    infra::ZooKafkaClient client("test", "localhost:2181");
     ASSERT_NO_THROW(client.init());
 
     auto putResult = client.put("/keys", "keys");
@@ -50,7 +51,7 @@ TEST(ZookeeperClient, init)
     auto getResult = client.get("/keys");
     getResult.wait();
     ASSERT_FALSE(getResult.getTry().hasException());
-    ASSERT_EQ(getResult.value(), "keys");
+    ASSERT_EQ(getResult.value().data, "keys");
 }
 
 

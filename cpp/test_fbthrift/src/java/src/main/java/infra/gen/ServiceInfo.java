@@ -41,6 +41,8 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
   private static final org.apache.thrift.protocol.TField ID_FIELD_DESC = new org.apache.thrift.protocol.TField("id", org.apache.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.thrift.protocol.TField DATA_SPHERE_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("dataSphereId", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField NODE_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("nodeId", org.apache.thrift.protocol.TType.STRING, (short)3);
+  private static final org.apache.thrift.protocol.TField IP_FIELD_DESC = new org.apache.thrift.protocol.TField("ip", org.apache.thrift.protocol.TType.STRING, (short)4);
+  private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)5);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -51,12 +53,16 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
   public String id; // required
   public String dataSphereId; // required
   public String nodeId; // required
+  public String ip; // required
+  public int port; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     ID((short)1, "id"),
     DATA_SPHERE_ID((short)2, "dataSphereId"),
-    NODE_ID((short)3, "nodeId");
+    NODE_ID((short)3, "nodeId"),
+    IP((short)4, "ip"),
+    PORT((short)5, "port");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -77,6 +83,10 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
           return DATA_SPHERE_ID;
         case 3: // NODE_ID
           return NODE_ID;
+        case 4: // IP
+          return IP;
+        case 5: // PORT
+          return PORT;
         default:
           return null;
       }
@@ -117,6 +127,8 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
   }
 
   // isset id assignments
+  private static final int __PORT_ISSET_ID = 0;
+  private byte __isset_bitfield = 0;
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -126,6 +138,10 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.NODE_ID, new org.apache.thrift.meta_data.FieldMetaData("nodeId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.IP, new org.apache.thrift.meta_data.FieldMetaData("ip", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData("port", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ServiceInfo.class, metaDataMap);
   }
@@ -136,18 +152,24 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
   public ServiceInfo(
     String id,
     String dataSphereId,
-    String nodeId)
+    String nodeId,
+    String ip,
+    int port)
   {
     this();
     this.id = id;
     this.dataSphereId = dataSphereId;
     this.nodeId = nodeId;
+    this.ip = ip;
+    this.port = port;
+    setPortIsSet(true);
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
   public ServiceInfo(ServiceInfo other) {
+    __isset_bitfield = other.__isset_bitfield;
     if (other.isSetId()) {
       this.id = other.id;
     }
@@ -157,6 +179,10 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
     if (other.isSetNodeId()) {
       this.nodeId = other.nodeId;
     }
+    if (other.isSetIp()) {
+      this.ip = other.ip;
+    }
+    this.port = other.port;
   }
 
   public ServiceInfo deepCopy() {
@@ -168,6 +194,9 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
     this.id = null;
     this.dataSphereId = null;
     this.nodeId = null;
+    this.ip = null;
+    setPortIsSet(false);
+    this.port = 0;
   }
 
   public String getId() {
@@ -242,6 +271,53 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
     }
   }
 
+  public String getIp() {
+    return this.ip;
+  }
+
+  public ServiceInfo setIp(String ip) {
+    this.ip = ip;
+    return this;
+  }
+
+  public void unsetIp() {
+    this.ip = null;
+  }
+
+  /** Returns true if field ip is set (has been assigned a value) and false otherwise */
+  public boolean isSetIp() {
+    return this.ip != null;
+  }
+
+  public void setIpIsSet(boolean value) {
+    if (!value) {
+      this.ip = null;
+    }
+  }
+
+  public int getPort() {
+    return this.port;
+  }
+
+  public ServiceInfo setPort(int port) {
+    this.port = port;
+    setPortIsSet(true);
+    return this;
+  }
+
+  public void unsetPort() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __PORT_ISSET_ID);
+  }
+
+  /** Returns true if field port is set (has been assigned a value) and false otherwise */
+  public boolean isSetPort() {
+    return EncodingUtils.testBit(__isset_bitfield, __PORT_ISSET_ID);
+  }
+
+  public void setPortIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PORT_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ID:
@@ -268,6 +344,22 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       }
       break;
 
+    case IP:
+      if (value == null) {
+        unsetIp();
+      } else {
+        setIp((String)value);
+      }
+      break;
+
+    case PORT:
+      if (value == null) {
+        unsetPort();
+      } else {
+        setPort((Integer)value);
+      }
+      break;
+
     }
   }
 
@@ -281,6 +373,12 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
 
     case NODE_ID:
       return getNodeId();
+
+    case IP:
+      return getIp();
+
+    case PORT:
+      return getPort();
 
     }
     throw new IllegalStateException();
@@ -299,6 +397,10 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       return isSetDataSphereId();
     case NODE_ID:
       return isSetNodeId();
+    case IP:
+      return isSetIp();
+    case PORT:
+      return isSetPort();
     }
     throw new IllegalStateException();
   }
@@ -343,6 +445,24 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
         return false;
     }
 
+    boolean this_present_ip = true && this.isSetIp();
+    boolean that_present_ip = true && that.isSetIp();
+    if (this_present_ip || that_present_ip) {
+      if (!(this_present_ip && that_present_ip))
+        return false;
+      if (!this.ip.equals(that.ip))
+        return false;
+    }
+
+    boolean this_present_port = true;
+    boolean that_present_port = true;
+    if (this_present_port || that_present_port) {
+      if (!(this_present_port && that_present_port))
+        return false;
+      if (this.port != that.port)
+        return false;
+    }
+
     return true;
   }
 
@@ -364,6 +484,16 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
     list.add(present_nodeId);
     if (present_nodeId)
       list.add(nodeId);
+
+    boolean present_ip = true && (isSetIp());
+    list.add(present_ip);
+    if (present_ip)
+      list.add(ip);
+
+    boolean present_port = true;
+    list.add(present_port);
+    if (present_port)
+      list.add(port);
 
     return list.hashCode();
   }
@@ -402,6 +532,26 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
     }
     if (isSetNodeId()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.nodeId, other.nodeId);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetIp()).compareTo(other.isSetIp());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetIp()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.ip, other.ip);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetPort()).compareTo(other.isSetPort());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetPort()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.port, other.port);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -449,6 +599,18 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       sb.append(this.nodeId);
     }
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("ip:");
+    if (this.ip == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.ip);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("port:");
+    sb.append(this.port);
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -468,6 +630,8 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
 
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
     try {
+      // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+      __isset_bitfield = 0;
       read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
     } catch (org.apache.thrift.TException te) {
       throw new java.io.IOException(te);
@@ -516,6 +680,22 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 4: // IP
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.ip = iprot.readString();
+              struct.setIpIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 5: // PORT
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.port = iprot.readI32();
+              struct.setPortIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -546,6 +726,14 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
         oprot.writeString(struct.nodeId);
         oprot.writeFieldEnd();
       }
+      if (struct.ip != null) {
+        oprot.writeFieldBegin(IP_FIELD_DESC);
+        oprot.writeString(struct.ip);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldBegin(PORT_FIELD_DESC);
+      oprot.writeI32(struct.port);
+      oprot.writeFieldEnd();
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -573,7 +761,13 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       if (struct.isSetNodeId()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.isSetIp()) {
+        optionals.set(3);
+      }
+      if (struct.isSetPort()) {
+        optionals.set(4);
+      }
+      oprot.writeBitSet(optionals, 5);
       if (struct.isSetId()) {
         oprot.writeString(struct.id);
       }
@@ -583,12 +777,18 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       if (struct.isSetNodeId()) {
         oprot.writeString(struct.nodeId);
       }
+      if (struct.isSetIp()) {
+        oprot.writeString(struct.ip);
+      }
+      if (struct.isSetPort()) {
+        oprot.writeI32(struct.port);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, ServiceInfo struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(5);
       if (incoming.get(0)) {
         struct.id = iprot.readString();
         struct.setIdIsSet(true);
@@ -600,6 +800,14 @@ public class ServiceInfo implements org.apache.thrift.TBase<ServiceInfo, Service
       if (incoming.get(2)) {
         struct.nodeId = iprot.readString();
         struct.setNodeIdIsSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.ip = iprot.readString();
+        struct.setIpIsSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.port = iprot.readI32();
+        struct.setPortIsSet(true);
       }
     }
   }
