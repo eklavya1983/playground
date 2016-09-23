@@ -1,5 +1,11 @@
 Now
--Organize where stuff gets installed.  Create lib and binary folders
+-Resolve nb server
+-Make server code modular
+-Run the test
+-Take in main module as a param call init on it
+-Pullin config from zookeeper
+-Kafka work
+-Api for registering to topic
 
 Infrastructure
 -Clean up log statements in zkadpater

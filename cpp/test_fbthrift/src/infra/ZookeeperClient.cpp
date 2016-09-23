@@ -1,5 +1,5 @@
-#include <infra/ZookeeperClient.h>
 #include <zookeeper.h>
+#include <infra/ZookeeperClient.h>
 #include <chrono>
 #include <thread>
 #include <util/Log.h>
@@ -67,16 +67,23 @@ ZookeeperClient::~ZookeeperClient()
 
 void ZookeeperClient::init()
 {
-    int tryCnt = 0;
     zh_ = zookeeper_init(servers_.c_str(), &ZookeeperClient::watcherFn, 30000, 0, this, 0);
     if (zh_ == nullptr) {
         CLog(FATAL) << "Failed to initialize zookeeper instance";
         throw ZookeeperException(ZINVALIDSTATE );
     }
+    // TODO(Rao): We don't need to do this.  Connection can take place in the
+    // backgroud
+    blockUntilConnectedOrTimedOut(5);
 
-    while (zoo_state(zh_) != ZOO_CONNECTED_STATE && tryCnt < MAX_CONN_TRIES) {
-        tryCnt++;
+}
+
+void ZookeeperClient::blockUntilConnectedOrTimedOut(int seconds)
+{
+    int secondsElapsed = 0;
+    while (zoo_state(zh_) != ZOO_CONNECTED_STATE && secondsElapsed < seconds) {
         std::this_thread::sleep_for(std::chrono::seconds(2));
+        secondsElapsed += 2;
     }
 
     if (zoo_state(zh_) != ZOO_CONNECTED_STATE) {

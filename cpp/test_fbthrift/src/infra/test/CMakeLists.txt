@@ -16,3 +16,4 @@ link_directories(${FBTHRIFT_LIB_DIRS} ${GTEST_LIB_DIRS} ${ZOOKEEPER_LIB_DIRS})
 
 
 add_unit_test(ZookeeperClient)
+add_unit_test(Service)

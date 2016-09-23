@@ -10,7 +10,7 @@ file(GLOB_RECURSE thrift_ignore_sources "gen/*.skeleton.cpp")
 message("Thirft sources: ${thrift_cpp_sources}")
 
 # Library
-add_library(infra ZookeeperClient.cpp ${thrift_cpp_sources})
+add_library(infra ServiceServer.cpp ZookeeperClient.cpp ${thrift_cpp_sources})
 install (TARGETS infra DESTINATION lib)
 
 # Tests

@@ -44,6 +44,9 @@ struct ZookeeperClient {
     ~ZookeeperClient();
     void init();
     void close();
+
+    void blockUntilConnectedOrTimedOut(int seconds);
+
     void watcher(int type, int state, const char *path);
 
     folly::Future<std::string> put(const std::string &key, const std::string &value);
