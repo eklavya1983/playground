@@ -1,0 +1,23 @@
+Adding nodes
+-We will have addnode script
+-This command will be run from the node itself
+-It will do hardward discovery and report to config service
+-It will also configure services to run
+-After node is added to via config service, infromation returned from config service is stamped on the node
+
+Service bootup
+-Service will have following args
+--nic_if, root, port
+-At root we expect json file with node information validated by config service.  This will contain node name for now
+-
+
+datom cli commands
+
+datom addnode
+>enter root
+>discovered hardware
+>service to run
+
+datom startservice <svc>
+
+datom stopservice <svc>
