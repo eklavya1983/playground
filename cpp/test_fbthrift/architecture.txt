@@ -4,6 +4,7 @@ Principles
 -no globals
 -try to minimize dependency on config service.  If config service is down, only config paths should be impacted.
 -In header files do forward declaration as much as possible, especially in infra folder.
+-We need to be hardware agnostic as much as possible.  Dependending datasphere configuration we may advice best practices, place restrictions.
 
 -On volume create, decide on which replicas will hold the volume
 -Volume config channel

@@ -92,7 +92,8 @@ flags = [
 '-I/home/nbayyana/playground/cpp/test_fbthrift/fbthrift/thrift/folly',
 '-I/home/nbayyana/playground/cpp/test_fbthrift/gtest-1.7.0/include',
 '-I/home/nbayyana/playground/cpp/test_fbthrift/src',
-'-I/home/nbayyana/playground/cpp/test_fbthrift/src/actor/gen-cpp2'
+'-I/home/nbayyana/playground/cpp/test_fbthrift/src/actor/gen-cpp2',
+'-I/home/nbayyana/playground/cpp/test_fbthrift/artifacts/include'
 ]
 
 

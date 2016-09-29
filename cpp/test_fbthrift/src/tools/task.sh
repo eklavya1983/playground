@@ -38,5 +38,12 @@ function install {
     make && make install
 }
 
+# In the idl folder run make to generate code
+function idlgen {
+    cd ${SOURCEDIR}/idl
+    make clean
+    make infra
+}
+
 # call arguments verbatim:
 $@
