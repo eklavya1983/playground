@@ -38,12 +38,13 @@ TEST(ZooKafkaClient, init_without_zk)
     ASSERT_THROW(client.init(), infra::ZookeeperException);
 }
 
-TEST(ZooKafkaClient, init)
+TEST(ZooKafkaClient, basic_ops)
 {
     ZKHelper h;
     infra::ZooKafkaClient client("test", "localhost:2181");
     ASSERT_NO_THROW(client.init());
 
+    /* Ensure basic put get work */
     auto putResult = client.put("/keys", "keys");
     putResult.wait();
     ASSERT_FALSE(putResult.getTry().hasException());
@@ -52,6 +53,27 @@ TEST(ZooKafkaClient, init)
     getResult.wait();
     ASSERT_FALSE(getResult.getTry().hasException());
     ASSERT_EQ(getResult.value().data, "keys");
+
+    /* Add some children */
+    auto res = client.put("/services", "")
+        .then([&client]() {
+                return client.put("/services/service1", "service1data");
+              })
+        .then([&client]() {
+                return client.put("/services/service2", "service2data");
+              });
+    res.wait();
+    ASSERT_FALSE(res.getTry().hasException());
+
+    /* Ensure get children works */
+    auto children = client.getChildrenSync("/services");
+    ASSERT_EQ(children.size(), 2);
+    auto itr = std::find_if(children.begin(), children.end(),
+                 [](const infra::CoordinationClient::KVPair &kv) { return kv.first == "service1";});
+    ASSERT_TRUE(itr != children.end());
+    itr = std::find_if(children.begin(), children.end(),
+                       [](const infra::CoordinationClient::KVPair &kv) { return kv.first == "service2";});
+    ASSERT_TRUE(itr != children.end());
 }
 
 

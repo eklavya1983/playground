@@ -10,8 +10,10 @@ while [ -h "$SOURCE" ]; do
 done
 TOOLSDIR="$(cd -P "$( dirname "${SOURCE}" )" && pwd )"
 SOURCEDIR="$( cd ${TOOLSDIR}/.. && pwd)"
+KAFKADIR="$( cd ${SOURCEDIR}/../kafka_2.11-0.10.0.0 && pwd)"
 printf "srcdir: $SOURCEDIR\n"
 printf "toolsdir: $TOOLSDIR\n"
+printf "kafkadir: $KAFKADIR\n"
 
 # includes
 source ${TOOLSDIR}/utils.sh
@@ -38,9 +40,19 @@ function install {
     make && make install
 }
 
+function startkafka {
+    ${KAFKADIR}/bin/zookeeper-server-start.sh -daemon ${KAFKADIR}/config/zookeeper.properties
+    ${KAFKADIR}/bin/kafka-server-start.sh -daemon ${KAFKADIR}/config/server.properties
+}
+
+function stopkafka {
+    PIDS=$(ps ax | grep java | grep -i kafka | grep -v grep | awk '{print $1}')
+    kill -9 $PIDS
+}
+
 # In the idl folder run make to generate code
 function idlgen {
-    cd ${SOURCEDIR}/idl
+    cd ${SOURCEDIR}/idls
     make clean
     make infra
 }

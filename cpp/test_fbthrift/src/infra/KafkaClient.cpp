@@ -19,6 +19,22 @@ struct KafkaEventCb : RdKafka::EventCb {
     KafkaClient         *parent_ {nullptr};
 };
 
+struct KafkaRebalanceCb : public RdKafka::RebalanceCb {
+  KafkaRebalanceCb(KafkaClient *parent)
+      : parent_(parent)
+  {
+  }
+
+  void rebalance_cb (RdKafka::KafkaConsumer *consumer,
+                     RdKafka::ErrorCode err,
+                     std::vector<RdKafka::TopicPartition*> &partitions) {
+      parent_->rebalanceCallback(consumer, err, partitions);
+  }
+
+  KafkaClient         *parent_ {nullptr};
+};
+
+
 KafkaClient::KafkaClient(const std::string logContext,
                          const std::string &brokers,
                          const std::string &consumerGroupId)
@@ -46,6 +62,7 @@ KafkaClient::~KafkaClient()
     }
 
     if (eventCb_) delete eventCb_;
+    if (rebalanceCb_) delete rebalanceCb_;
 
     RdKafka::wait_destroyed(5000);
 }
@@ -70,6 +87,9 @@ void KafkaClient::init()
     /* Initialize subscriber */
     auto status = conf->set("group.id",  consumerGroupId_, errstr);
     CHECK(status == RdKafka::Conf::CONF_OK);
+    rebalanceCb_ = new KafkaRebalanceCb(this);
+    status = conf->set("rebalance_cb", rebalanceCb_, errstr);
+    CHECK(status == RdKafka::Conf::CONF_OK);
     consumer_ = RdKafka::KafkaConsumer::create(conf.get(), errstr);
     if (!consumer_) {
         CLog(ERROR) << "Unable to create consumer";
@@ -79,10 +99,12 @@ void KafkaClient::init()
 
     /* Start listening for subscribed messages */
     consumeThread_ = new std::thread([this]() {
+        CLog(INFO) << "subscribe loop started";
         while (!aborted_) {
             std::unique_ptr<RdKafka::Message> msg(consumer_->consume(1000));
             consumeMessage_(msg.get(), NULL);
         }
+        CLog(INFO) << "subscribe loop ended";
     });
 }
 
@@ -135,6 +157,7 @@ int KafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb 
             << " error:" << RdKafka::err2str(err);
         return STATUS_SUBSCRIBE_FAILED;
     }
+    CLog(INFO) << "subscribed to topic:" << topic;
     return STATUS_OK;
 }
 
@@ -153,7 +176,9 @@ void KafkaClient::consumeMessage_(RdKafka::Message* message, void* opaque)
                     << " that doesn't have registered callback.  Ignoring";
                 break;
             }
-            itr->second();
+            itr->second(message->offset(),
+                        std::string(static_cast<const char *>(message->payload()),
+                                    message->len()));
         }
 #if 0
             /* Real message */
@@ -203,6 +228,8 @@ void KafkaClient::eventCallback(RdKafka::Event &event)
     switch (event.type())
     {
         case RdKafka::Event::EVENT_ERROR:
+            // NOTE: Connection error is reporte here as Broker transport
+            // failure) TODO(Rao): Handle it
             CLog(WARNING) << "ERROR (" << RdKafka::err2str(event.err()) << "): " <<
                 event.str() << std::endl;
             break;
@@ -228,4 +255,25 @@ void KafkaClient::eventCallback(RdKafka::Event &event)
             break;
     }
 }
+
+void KafkaClient::rebalanceCallback(RdKafka::KafkaConsumer *consumer,
+                                    int err,
+                                    std::vector<RdKafka::TopicPartition*> &partitions)
+{
+
+    CLog(INFO) << "RebalanceCb: " << RdKafka::err2str(static_cast<RdKafka::ErrorCode>(err))
+        << ": ";
+
+    for (unsigned int i = 0 ; i < partitions.size() ; i++) {
+        CLog(INFO) << partitions[i]->topic() <<
+            "[" << partitions[i]->partition() << "], ";
+    }
+
+    if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
+        consumer->assign(partitions);
+    } else {
+        consumer->unassign();
+    }
+}
+
 }

@@ -19,8 +19,9 @@ struct ServiceInfo {
 	5: i32				port;
 }
 
+const i32 INVALID_VERSION = -1;
 struct VersionedData {
-	1: i64				txId;
+	1: i64				version;
 	2: string 			data;
 }
 

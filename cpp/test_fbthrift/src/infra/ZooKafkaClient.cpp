@@ -5,11 +5,33 @@
 #include <thread>
 #include <util/Log.h>
 #include <folly/futures/Future.h>
+#include <folly/Format.h>
 
 namespace infra {
 
 using StringPromise = folly::Promise<std::string>;
+using StringVectorPromise = folly::Promise<std::vector<std::string>>;
 using VersionedDataPromise = folly::Promise<VersionedData>;
+using VersionedDataVectorPromise = folly::Promise<std::vector<VersionedData>>;
+
+static void stringVectorCompletionCb(int rc,
+                                     const String_vector *strings,
+                                     const void *data)
+{
+    StringVectorPromise *promise = const_cast<StringVectorPromise*>(reinterpret_cast<const StringVectorPromise*>(data));
+
+    if (rc != ZOK) {
+        LOG(WARNING) << "stringVectorCompletionCb error: " << zerror(rc);
+        promise->setException(infra::ZookeeperException(rc));
+    } else {
+        std::vector<std::string> resp;
+        for (int i = 0; strings && i < strings->count; i++) {
+            resp.push_back(std::string(strings->data[i]));
+        }
+        promise->setValue(std::move(resp));
+    }
+    delete promise;
+}
 
 static void stringCompletionCb(int rc,
                                const char *value,
@@ -35,7 +57,7 @@ static void dataCompletionCb(int rc, const char *value, int value_len,
         promise->setException(infra::ZookeeperException(rc));
     } else {
         VersionedData data;
-        data.txId = stat->czxid;
+        data.version = stat->czxid;
         data.data = std::move(std::string(value, value_len));
         promise->setValue(data);
     }
@@ -77,11 +99,11 @@ void ZooKafkaClient::init()
     }
     // TODO(Rao): We don't need to do this.  Connection can take place in the
     // backgroud
-    blockUntilConnectedOrTimedOut(5);
+    blockUntilConnectedOrTimedOut_(5);
 
 }
 
-void ZooKafkaClient::blockUntilConnectedOrTimedOut(int seconds)
+void ZooKafkaClient::blockUntilConnectedOrTimedOut_(int seconds)
 {
     int secondsElapsed = 0;
     while (zoo_state(zh_) != ZOO_CONNECTED_STATE && secondsElapsed < seconds) {
@@ -170,6 +192,48 @@ folly::Future<VersionedData> ZooKafkaClient::get(const std::string &key)
         return folly::makeFuture<VersionedData>(ZookeeperException(rc));
     }
     return future;
+}
+
+folly::Future<std::vector<std::string>>
+ZooKafkaClient::getChildrenSimple(const std::string &key)
+{
+    StringVectorPromise *promise = new StringVectorPromise();
+    auto future = promise->getFuture();
+    auto rc = zoo_awget_children(zh_, key.c_str(), nullptr, nullptr,
+                                 &stringVectorCompletionCb, promise);
+    if (rc != ZOK) {
+        CLog(WARNING) << "failed to get children key: " << key << " error: " << zerror(rc);
+        delete promise;
+        return folly::makeFuture<std::vector<std::string>>(ZookeeperException(rc));
+    }
+    return future;
+}
+
+#if 0
+folly::Future<std::vector<KVPair>>
+ZooKafkaClient::getChildren(const std::string &key)
+{
+    auto f = getChildrenSimple(key);
+    f.then([this, key](const std::vector<std::string>& children) {
+           std::vector<folly::Future<VersionedData>>fs;
+           for (const auto &c : children) {
+              fs.push_back(this->get(folly::sformat("{}/{}", key, c)));
+           }
+           return folly::collect(fs);
+           // TODO: Map
+    })
+}
+#endif
+
+std::vector<CoordinationClient::KVPair> ZooKafkaClient::getChildrenSync(const std::string &key)
+{
+    std::vector<CoordinationClient::KVPair> ret;
+    auto children  = getChildrenSimple(key).get();
+    for (const auto &c : children) {
+        auto data = this->get(folly::sformat("{}/{}", key, c)).get();
+        ret.push_back(std::make_pair(c, data));
+    }
+    return ret;
 }
 
 }  // namespace infra

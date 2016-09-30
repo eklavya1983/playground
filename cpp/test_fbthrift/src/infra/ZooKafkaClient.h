@@ -35,26 +35,30 @@ struct ZooKafkaClient : CoordinationClient {
                           const char *path,
                           void *watcherCtx);
     ZooKafkaClient(const std::string &logContext,
-                    const std::string& servers);
+                   const std::string& servers);
     ~ZooKafkaClient();
-    void init();
+    void init() override;
     void close();
 
-    void blockUntilConnectedOrTimedOut(int seconds);
-
-    void watcher(int type, int state, const char *path);
-
+    folly::Future<VersionedData> get(const std::string &key) override;
+    folly::Future<std::vector<std::string>> getChildrenSimple(const std::string &key);
+#if 0
+    folly::Future<std::vector<VersionedData>> getChildren(const std::string &key) override;
+#endif
+    std::vector<KVPair> getChildrenSync(const std::string &key) override;
     folly::Future<std::string> put(const std::string &key, const std::string &value);
-    folly::Future<VersionedData> get(const std::string &key);
 
     std::string typeToStr(int type);
     std::string stateToStr(int state);
+    void watcher(int type, int state, const char *path);
 
     zhandle_t* getHandle() { return zh_; }
 
     inline std::string getLogContext() const { return logContext_; }
 
- private:
+ protected:
+    void blockUntilConnectedOrTimedOut_(int seconds);
+
     std::string                                     logContext_;
     /* List of zookeeper servers */
     std::string                                     servers_;

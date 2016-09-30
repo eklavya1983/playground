@@ -5,6 +5,7 @@
 #include <mutex>
 #include <memory>
 #include <thread>
+#include <vector>
 
 namespace folly {
 template <class T>
@@ -18,17 +19,19 @@ class Producer;
 class KafkaConsumer;
 class Topic;
 class Message;
+class TopicPartition;
 }
 
 namespace infra {
 
 struct KafkaEventCb;
+struct KafkaRebalanceCb;
 
 /**
  * @brief Kafka client
  */
 struct KafkaClient {
-    using MsgReceivedCb = std::function<void ()>;
+    using MsgReceivedCb = std::function<void (int64_t, const std::string &)>;
 
     KafkaClient(const std::string logContext,
                 const std::string &brokers,
@@ -37,10 +40,13 @@ struct KafkaClient {
     virtual void init();
 
     int publishMessage(const std::string &topic,
-                                              const std::string &message);
+                       const std::string &message);
     int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb);
 
     void eventCallback(RdKafka::Event &event);
+    void rebalanceCallback(RdKafka::KafkaConsumer *consumer,
+                           int err,
+                           std::vector<RdKafka::TopicPartition*> &partitions);
 
     inline const std::string& getLogContext() const { return logContext_; }
 
@@ -53,6 +59,7 @@ struct KafkaClient {
     RdKafka::Producer                                   *producer_ {nullptr};
     RdKafka::KafkaConsumer                              *consumer_ {nullptr};
     KafkaEventCb                                        *eventCb_ {nullptr}; 
+    KafkaRebalanceCb                                    *rebalanceCb_ {nullptr};
     std::thread                                         *consumeThread_ {nullptr};
 
     std::mutex                                          subscriptionLock_;
