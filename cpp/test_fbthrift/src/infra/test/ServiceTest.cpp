@@ -9,11 +9,21 @@
 #include <infra/Service.h>
 #include <infra/gen/gen-cpp2/ServiceApi.h>
 #include <boost/cast.hpp>
+#include <testlib/DatomBringupHelper.h>
 
 using namespace apache::thrift::async;
 using namespace apache::thrift;
 
-TEST(Service, testserver)
+TEST(Service, bringup)
+{
+    testlib::DatomBringupHelper bringupHelper;
+    bringupHelper.cleanStartDatom();
+
+    bringupHelper.addDataSphere("sphere1");
+    bringupHelper.addService("sphere1", "node1", "service1", "127.0.0.1", 8080);
+}
+
+TEST(Service, DISABLED_testserver)
 {
     infra::ServiceInfo info;
     info.id = "service1";

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <stdexcept>
 #include <infra/CoordinationClient.h>
 
@@ -9,6 +10,8 @@ typedef struct _zhandle zhandle_t;
 }
 
 namespace infra {
+
+struct KafkaClient;
 
 /**
  * @brief Connection exception
@@ -35,18 +38,33 @@ struct ZooKafkaClient : CoordinationClient {
                           const char *path,
                           void *watcherCtx);
     ZooKafkaClient(const std::string &logContext,
-                   const std::string& servers);
+                   const std::string& servers,
+                   const std::string& consumerGroupId="");
     ~ZooKafkaClient();
     void init() override;
     void close();
 
-    folly::Future<VersionedData> get(const std::string &key) override;
+    folly::Future<std::string> create(const std::string &key,
+                                      const std::string &value) override;
+    folly::Future<std::string> createIncludingAncestors(const std::string &key,
+                                                        const std::string &value) override;
+    folly::Future<int64_t> set(const std::string &key,
+                               const std::string &value,
+                               const int &version) override;
+    folly::Future<KVBinaryData> get(const std::string &key) override;
     folly::Future<std::vector<std::string>> getChildrenSimple(const std::string &key);
 #if 0
-    folly::Future<std::vector<VersionedData>> getChildren(const std::string &key) override;
+    folly::Future<std::vector<KVBinaryData>> getChildren(const std::string &key) override;
 #endif
-    std::vector<KVPair> getChildrenSync(const std::string &key) override;
-    folly::Future<std::string> put(const std::string &key, const std::string &value);
+    std::vector<KVBinaryData> getChildrenSync(const std::string &key) override;
+#if 0
+    folly::Future<std::string> put(const std::string &key,
+                                   const std::string &value) override;
+#endif
+
+    int publishMessage(const std::string &topic,
+                       const std::string &message) override;
+    int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) override;
 
     std::string typeToStr(int type);
     std::string stateToStr(int state);
@@ -64,6 +82,8 @@ struct ZooKafkaClient : CoordinationClient {
     std::string                                     servers_;
     /* Zookeeper handle */
     zhandle_t                                       *zh_ {nullptr};
+    /* Kafka client handle */
+    std::shared_ptr<KafkaClient>                    kafkaClient_;
 };
 
 }  // namespace infra

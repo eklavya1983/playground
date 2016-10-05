@@ -33,6 +33,13 @@ function clean {
     set +x
 }
 
+# In the idl folder run make to generate code
+function idlgen {
+    cd ${SOURCEDIR}/idls
+    make clean
+    make infra
+}
+
 # buid source and install artifacts to /op/datom
 function install {
     cd ${SOURCEDIR}/../build
@@ -40,21 +47,69 @@ function install {
     make && make install
 }
 
-function startkafka {
-    ${KAFKADIR}/bin/zookeeper-server-start.sh -daemon ${KAFKADIR}/config/zookeeper.properties
-    ${KAFKADIR}/bin/kafka-server-start.sh -daemon ${KAFKADIR}/config/server.properties
+# clean zookeeper and kafka logs locally
+function cleandatom {
+    rm -rf /tmp/zookeeper/*
+    rm -rf /tmp/kafka-logs/*
 }
 
-function stopkafka {
-    PIDS=$(ps ax | grep java | grep -i kafka | grep -v grep | awk '{print $1}')
-    kill -9 $PIDS
+# Stops zk & kafka locally
+function stopdatom {
+    while true; do
+        local pids=$(ps ax | grep java | grep -i kafka | grep -v grep | awk '{print $1}')
+        if [[ -z $pids ]]; then
+            break
+        fi
+        kill -9 $pids
+        sleep 1
+    done
 }
 
-# In the idl folder run make to generate code
-function idlgen {
-    cd ${SOURCEDIR}/idls
-    make clean
-    make infra
+# Starts zk & kafka locally
+function startdatom {
+    while true; do
+        ${KAFKADIR}/bin/zookeeper-server-start.sh -daemon ${KAFKADIR}/config/zookeeper.properties
+        ${KAFKADIR}/bin/kafka-server-start.sh -daemon ${KAFKADIR}/config/server.properties
+        break
+        # NOTE: The below logic isn't executed.  What I found is if I don't clean logs sometimes
+        # kafka crashes saying another broker is already registered.  When there is a use case
+        # where we don't clean logs the below logic of waiting and trying again may work
+        sleep 5 
+        local cnt=$(ps ax | grep java | grep -i kafka | grep -v grep | wc | awk '{print $1}')
+        if [[ $cnt -gt 1 ]]; then
+            break
+        fi
+        logwarn "Failed to start zookeeper and kafka.  Trying again after stopping"
+        stopdatom
+    done
+}
+
+# Stops, clean, and starts datom
+function cleanstartdatom {
+    stopdatom
+    cleandatom
+    startdatom
+}
+
+# Another version of starting datom not in use
+function startdatom2 {
+    while true; do
+        ${KAFKADIR}/bin/zookeeper-server-start.sh -daemon ${KAFKADIR}/config/zookeeper.properties
+        local pids=$(ps ax | grep java | grep -i kafka | grep -v grep | awk '{print $1}')
+        if [[ ! -z $pids ]]; then
+            break
+        fi
+        logwarn "Failed to start zookeeper.  Trying again...."
+    done
+
+    while true; do
+        ${KAFKADIR}/bin/kafka-server-start.sh -daemon ${KAFKADIR}/config/server.properties
+        local cnt=$(ps ax | grep java | grep -i kafka | grep -v grep | wc | awk '{print $1}')
+        if [[ $cnt -gt 1 ]]; then
+            break
+        fi
+        logwarn "Failed to start kafka.  Trying again...."
+    done
 }
 
 # call arguments verbatim:

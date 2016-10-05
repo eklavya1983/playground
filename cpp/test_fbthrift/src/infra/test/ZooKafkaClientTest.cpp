@@ -1,5 +1,6 @@
 #include <infra/ZooKafkaClient.h>
 #include <infra/gen/commontypes_types.h>
+#include <infra/gen-ext/KVBinaryData_ext.tcc>
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
 #include <folly/Format.h>
@@ -44,10 +45,10 @@ TEST(ZooKafkaClient, basic_ops)
     infra::ZooKafkaClient client("test", "localhost:2181");
     ASSERT_NO_THROW(client.init());
 
-    /* Ensure basic put get work */
-    auto putResult = client.put("/keys", "keys");
-    putResult.wait();
-    ASSERT_FALSE(putResult.getTry().hasException());
+    /* Ensure basic create get work */
+    auto createResult = client.create("/keys", "keys");
+    createResult.wait();
+    ASSERT_FALSE(createResult.getTry().hasException());
 
     auto getResult = client.get("/keys");
     getResult.wait();
@@ -55,12 +56,12 @@ TEST(ZooKafkaClient, basic_ops)
     ASSERT_EQ(getResult.value().data, "keys");
 
     /* Add some children */
-    auto res = client.put("/services", "")
+    auto res = client.create("/services", "")
         .then([&client]() {
-                return client.put("/services/service1", "service1data");
+                return client.create("/services/service1", "service1data");
               })
         .then([&client]() {
-                return client.put("/services/service2", "service2data");
+                return client.create("/services/service2", "service2data");
               });
     res.wait();
     ASSERT_FALSE(res.getTry().hasException());
@@ -69,11 +70,40 @@ TEST(ZooKafkaClient, basic_ops)
     auto children = client.getChildrenSync("/services");
     ASSERT_EQ(children.size(), 2);
     auto itr = std::find_if(children.begin(), children.end(),
-                 [](const infra::CoordinationClient::KVPair &kv) { return kv.first == "service1";});
+                 [](const infra::KVBinaryData &kvb) { return getId(kvb) == "service1";});
     ASSERT_TRUE(itr != children.end());
     itr = std::find_if(children.begin(), children.end(),
-                       [](const infra::CoordinationClient::KVPair &kv) { return kv.first == "service2";});
+                       [](const infra::KVBinaryData &kvb) { return getId(kvb) == "service2";});
     ASSERT_TRUE(itr != children.end());
+
+
+    /* createIncludingAncestors test */
+    res = client.createIncludingAncestors("/datom3/services/service1", "data");
+    res.wait();
+    ASSERT_FALSE(res.getTry().hasException());
+    /* Create same path should fail as it's a duplicate */
+    res = client.createIncludingAncestors("/datom3/services/service1", "data");
+    res.wait();
+    ASSERT_TRUE(res.getTry().hasException());
+    /* Create an addtional path with ancestry sharing should succeed */
+    res = client.createIncludingAncestors("/datom3/services/service2/service3", "data");
+    res.wait();
+    ASSERT_FALSE(res.getTry().hasException());
+
+    /* set test */
+    /* set on non-existent node should fail */
+    auto versionRes = client.set("/datom4", "data", -1);
+    versionRes.wait();
+    ASSERT_TRUE(versionRes.getTry().hasException());
+    /* set on existing node should succeed */
+    versionRes = client
+        .create("/datom4", "data")
+        .then([&client]() {
+              return client.set("/datom4", "datom4", -1);
+          });
+    versionRes.wait();
+    ASSERT_FALSE(versionRes.getTry().hasException());
+    ASSERT_EQ(client.get("/datom4").get().data, "datom4");
 }
 
 

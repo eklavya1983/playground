@@ -9,4 +9,5 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #add_subdirectory(examples)
 add_subdirectory(infra)
+add_subdirectory(testlib)
 add_subdirectory(configservice)

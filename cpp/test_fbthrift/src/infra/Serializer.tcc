@@ -61,4 +61,18 @@ void deserializeFromThriftJson(const std::string &payloadBuf,
     deserializeFromThriftProto<PayloadT, tp::TJSONProtocol>(payloadBuf, payload, logCtx);
 }
 
+#if 0
+template<class PayloadT>
+void serializeVersionData(const int64_t &version,
+                          const PayloadT &payload,
+                          std::string &payloadBuf,
+                          const std::string &logCtx)
+{
+    VersionedData data;
+    data.version = version;
+    serializeToThriftJson<PayloadT>(payload, data.data, logCtx);
+    serializeToThriftJson<VersionedData>(data, payloadBuf, logCtx);
+}
+#endif
+
 } // namespace fds

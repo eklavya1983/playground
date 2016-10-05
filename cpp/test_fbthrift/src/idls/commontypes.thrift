@@ -20,9 +20,16 @@ struct ServiceInfo {
 }
 
 const i32 INVALID_VERSION = -1;
-struct VersionedData {
-	1: i64				version;
-	2: string 			data;
+
+/* Common keys */
+const string KEY_VERSION                        = "version"
+const string KEY_TYPE                           = "type"
+const string KEY_ID				= "id"
+
+/* Holds binary data with some properties.  Typical properties include type, version, etc. */
+struct KVBinaryData {
+	1: map<string, string>  props;
+	2: binary               data;
 }
 
 struct Properties {

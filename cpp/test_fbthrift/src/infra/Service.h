@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <infra/ModuleProvider.h>
 #include <infra/gen/commontypes_types.h>
 
 namespace apache { namespace thrift { namespace server {
@@ -15,9 +16,10 @@ struct CoordinationClient;
 /**
  * @brief Base Service class
  */
-struct Service {
+struct Service : ModuleProvider {
     Service(const std::string &logContext,
             const ServiceInfo &info,
+            bool enableServer,
             const std::shared_ptr<CoordinationClient> &coordinationClient);
     virtual ~Service();
     Service(const Service&) = delete;
@@ -26,6 +28,12 @@ struct Service {
     virtual void init();
     virtual void run();
     virtual void shutdown();
+
+    std::string getDatasphereId() const override;
+    std::string getNodeId() const override;
+    std::string getServiceId() const override;
+    CoordinationClient* getCoordinationClient() const override;
+    ConnectionCache*    getConnectionCache() const override;
 
     inline std::string getLogContext() const {
         return logContext_;
@@ -38,6 +46,7 @@ struct Service {
  protected:
     virtual void initCoordinationClient_();
     virtual void initServer_();
+    virtual void ensureDatasphereMembership_();
 
     std::string                                 logContext_;
     ServiceInfo                                 serviceInfo_;
