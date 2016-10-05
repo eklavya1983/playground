@@ -77,7 +77,7 @@ static void dataCompletionCb(int rc, const char *value, int value_len,
         KVBinaryData kvb;
         setVersion(kvb, stat->version);
         kvb.data = std::move(std::string(value, value_len));
-        ctx->promise.setValue(data);
+        ctx->promise.setValue(kvb);
     }
     delete ctx;
 }

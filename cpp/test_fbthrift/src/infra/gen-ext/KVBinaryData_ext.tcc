@@ -1,4 +1,5 @@
 #pragma once
+
 #include <infra/gen/commontypes_types.h>
 #include <infra/gen/commontypes_constants.h>
 #include <folly/Conv.h>
@@ -68,37 +69,37 @@ void setProp(KVBinaryData &kvb, const std::string &key, const T &val)
 }
 
 template <class T>
-T getProp(KVBinaryData &kvb, const std::string &key)
+T getProp(const KVBinaryData &kvb, const std::string &key)
 {
     return folly::to<T>(kvb.props.at(key));
 }
 
-void setVersion(KVBinaryData &kvb, int64_t version)
+inline void setVersion(KVBinaryData &kvb, int64_t version)
 {
     setProp<int64_t>(kvb, g_commontypes_constants.KEY_VERSION, version);
 }
 
-int64_t getVersion(KVBinaryData &kvb)
+inline int64_t getVersion(const KVBinaryData &kvb)
 {
     return getProp<int64_t>(kvb, g_commontypes_constants.KEY_VERSION);
 }
 
-void setType(KVBinaryData &kvb, std::string type)
+inline void setType(KVBinaryData &kvb, const std::string &type)
 {
     setProp<std::string>(kvb, g_commontypes_constants.KEY_TYPE, type);
 }
 
-std::string getType(KVBinaryData &kvb)
+inline std::string getType(const KVBinaryData &kvb)
 {
     return getProp<std::string>(kvb, g_commontypes_constants.KEY_TYPE);
 }
 
-void setId(KVBinaryData &kvb, std::string id)
+inline void setId(KVBinaryData &kvb, const std::string &id)
 {
     setProp<std::string>(kvb, g_commontypes_constants.KEY_ID, id);
 }
 
-std::string getId(KVBinaryData &kvb)
+inline std::string getId(const KVBinaryData &kvb)
 {
     return getProp<std::string>(kvb, g_commontypes_constants.KEY_ID);
 }

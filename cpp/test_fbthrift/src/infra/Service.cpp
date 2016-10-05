@@ -70,6 +70,7 @@ void Service::init()
 
     /* publish this service is up */
     if (coordinationClient_) {
+#if 0
         std::string payload;
         serializeToThriftJson<>(serviceInfo_, payload, getLogContext());
         auto f = coordinationClient_->set();
@@ -77,6 +78,7 @@ void Service::init()
 
         serializeToThriftJson<ServiceInfo>(serviceInfo_, payload, getLogContext());
         coordinationClient_->publishMessage()
+#endif
     }
 }
 
