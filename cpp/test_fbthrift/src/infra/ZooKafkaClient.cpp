@@ -8,8 +8,35 @@
 #include <folly/futures/Future.h>
 #include <folly/Format.h>
 #include <infra/KafkaClient.h>
+#include <infra/gen/status_types.h>
+#include <infra/StatusException.h>
 
 namespace infra {
+
+/**
+ * @brief Convert zkError to StatusException
+ *
+ * @param zkError
+ *
+ * @return 
+ */
+static StatusException toStatusException(int zkError)
+{
+    StatusException e;
+    e.setOriginalStatus(zkError);
+    // TODO(Rao): Enhance by adding other mappings
+    switch (zkError) {
+        case ZNONODE:
+            e.setStatus(STATUS_INVALID_KEY);
+            break;
+        case ZNODEEXISTS:
+            e.setStatus(STATUS_DUPLICATE_KEY);
+            break;
+        default:
+            e.setStatus(STATUS_INVALID);
+    }
+    return e;
+}
 
 struct CreateCtx {
     folly::Promise<std::string> promise;
@@ -40,7 +67,7 @@ static void stringVectorCompletionCb(int rc,
     if (rc != ZOK) {
         LOG(WARNING) << "stringVectorCompletionCb key:" << ctx->key
             << " error:" << zerror(rc);
-        ctx->promise.setException(infra::ZookeeperException(rc));
+        ctx->promise.setException(infra::toStatusException(rc));
     } else {
         std::vector<std::string> resp;
         for (int i = 0; strings && i < strings->count; i++) {
@@ -59,7 +86,7 @@ static void stringCompletionCb(int rc,
 
     if (rc != ZOK) {
         LOG(WARNING) << "stringCompletionCb key:" << ctx->key << " error:" << zerror(rc);
-        ctx->promise.setException(infra::ZookeeperException(rc));
+        ctx->promise.setException(infra::toStatusException(rc));
     } else {
         ctx->promise.setValue(std::string(value));
     }
@@ -72,7 +99,7 @@ static void dataCompletionCb(int rc, const char *value, int value_len,
     GetCtx *ctx = const_cast<GetCtx*>(reinterpret_cast<const GetCtx*>(data));
     if (rc != ZOK) {
         LOG(WARNING) << "dataCompletionCb key:" << ctx->key << " error:" << zerror(rc);
-        ctx->promise.setException(infra::ZookeeperException(rc));
+        ctx->promise.setException(infra::toStatusException(rc));
     } else {
         KVBinaryData kvb;
         setVersion(kvb, stat->version);
@@ -88,7 +115,7 @@ static void statCompletionCb(int rc, const struct Stat *stat, const void *data)
 
     if (rc != ZOK) {
         LOG(WARNING) << "statCompletionCb key:" << ctx->key << " error:" << zerror(rc);
-        ctx->promise.setException(infra::ZookeeperException(rc));
+        ctx->promise.setException(infra::toStatusException(rc));
     } else {
         ctx->promise.setValue(stat->version);
     }
@@ -114,7 +141,7 @@ ZooKafkaClient::ZooKafkaClient(const std::string &logContext,
 {
     if (!consumerGroupId.empty()) {
         kafkaClient_ = std::make_shared<KafkaClient>(logContext,
-                                                     servers,
+                                                     "localhost",
                                                      consumerGroupId);
     }
 }
@@ -127,6 +154,7 @@ ZooKafkaClient::~ZooKafkaClient()
             CLog(WARNING) << "Failed to close zookeeper client.  error: " << zerror(rc);
         }
     }
+    CLog(INFO) << "Exiting ZooKafkaClient";
 }
 
 void ZooKafkaClient::init()
@@ -135,7 +163,7 @@ void ZooKafkaClient::init()
         zh_ = zookeeper_init(servers_.c_str(), &ZooKafkaClient::watcherFn, 30000, 0, this, 0);
         if (zh_ == nullptr) {
             CLog(FATAL) << "Failed to initialize zookeeper instance";
-            throw ZookeeperException(ZINVALIDSTATE );
+            throw toStatusException(ZINVALIDSTATE );
         }
         try {
             // TODO(Rao): We don't need to do this.  Connection can take place in the
@@ -144,12 +172,13 @@ void ZooKafkaClient::init()
             break;
         } catch (std::exception &e) {
             CLog(INFO) << "Establishing connection failed.  Trying again";
+            zookeeper_close(zh_);
         }
     }
 
     if (kafkaClient_) {
-        CLog(INFO) << "Initializing kafka";
         kafkaClient_->init();
+        CLog(INFO) << "Initialized kafka";
     } else {
         CLog(INFO) << "kafka client is not enabled";
     }
@@ -168,23 +197,18 @@ void ZooKafkaClient::blockUntilConnectedOrTimedOut_(int seconds)
         }
         std::this_thread::sleep_for(std::chrono::seconds(2));
         secondsElapsed += 2;
-        CLog(INFO) << "Zookeeper current state:" << stateToStr(state);
+        CLog(INFO) << "Zookeeper waiting to connect.  Current state:" << stateToStr(state);
     }
 
     if (zoo_state(zh_) != ZOO_CONNECTED_STATE) {
         CLog(ERROR) << "Failed to connect to zookeeper servers";
-        throw ZookeeperException(ZINVALIDSTATE );
+        throw toStatusException(ZINVALIDSTATE );
     }
-}
-
-void ZooKafkaClient::close()
-{
-    zookeeper_close(zh_);
 }
 
 void ZooKafkaClient::watcher(int type, int state, const char *path)
 {
-    CLog(INFO) << "type:" << typeToStr(type)
+    CLog(INFO) << "Zookeeper watcher cb type:" << typeToStr(type)
         << " state:" << stateToStr(state)
         << " path:" << path;
 }
@@ -236,7 +260,7 @@ folly::Future<std::string> ZooKafkaClient::create(const std::string &key,
     if (rc != ZOK) {
         CLog(WARNING) << "failed to put key: " << key << " error: " << zerror(rc);
         delete ctx;
-        return folly::makeFuture<std::string>(ZookeeperException(rc));
+        return folly::makeFuture<std::string>(toStatusException(rc));
     }
     return future;
 }
@@ -257,10 +281,10 @@ folly::Future<std::string> ZooKafkaClient::createIncludingAncestors(const std::s
         f = f.then([this, path, value](folly::Try<std::string> t) {
                try {
                     // if previous path creation failed below statement will
-                    // throw.  We ignore ZNODEEXISTS
+                    // throw.  We ignore STATUS_DUPLICATE_KEY
                     (void) t.value();
-               } catch (const ZookeeperException &e) {
-                    if (e.getError() != ZNODEEXISTS) {
+               } catch (const StatusException &e) {
+                    if (e.getStatus() != STATUS_DUPLICATE_KEY) {
                         CLog(INFO) << path << " already exists.  Ignoring create";
                         throw e;
                     }
@@ -283,7 +307,7 @@ folly::Future<int64_t> ZooKafkaClient::set(const std::string &key,
     if (rc != ZOK) {
         CLog(WARNING) << "failed to set key: " << key << " error: " << zerror(rc);
         delete ctx;
-        return folly::makeFuture<int64_t>(ZookeeperException(rc));
+        return folly::makeFuture<int64_t>(toStatusException(rc));
     }
     return future;
 }
@@ -298,7 +322,7 @@ folly::Future<KVBinaryData> ZooKafkaClient::get(const std::string &key)
     if (rc != ZOK) {
         CLog(WARNING) << "failed to get key: " << key << " error: " << zerror(rc);
         delete ctx;
-        return folly::makeFuture<KVBinaryData>(ZookeeperException(rc));
+        return folly::makeFuture<KVBinaryData>(toStatusException(rc));
     }
     return future;
 }
@@ -314,7 +338,7 @@ ZooKafkaClient::getChildrenSimple(const std::string &key)
     if (rc != ZOK) {
         CLog(WARNING) << "failed to get children key: " << key << " error: " << zerror(rc);
         delete ctx;
-        return folly::makeFuture<std::vector<std::string>>(ZookeeperException(rc));
+        return folly::makeFuture<std::vector<std::string>>(toStatusException(rc));
     }
     return future;
 }
@@ -361,7 +385,7 @@ folly::Future<std::string> ZooKafkaClient::put(const std::string &key,
     if (rc != ZOK) {
         CLog(WARNING) << "failed to put key: " << key << " error: " << zerror(rc);
         delete promise;
-        return folly::makeFuture<std::string>(ZookeeperException(rc));
+        return folly::makeFuture<std::string>(toStatusException(rc));
     }
     return future;
 }

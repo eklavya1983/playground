@@ -4,7 +4,7 @@ project("testlib")
 include_directories(${FBTHRIFT_INCLUDE_DIRS} ${ZOOKEEPER_INCLUDE_DIRS} ${ARTIFACTS_INCLUDE_DIRS})
 
 # Library
-add_library(testlib DatomBringupHelper.cpp)
+add_library(testlib DatomBringupHelper.cpp SignalUtils.cpp)
 #install (TARGETS infra DESTINATION lib)
 
 # Tests

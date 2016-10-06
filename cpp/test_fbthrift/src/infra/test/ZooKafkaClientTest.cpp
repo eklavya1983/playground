@@ -6,6 +6,7 @@
 #include <folly/Format.h>
 #include <folly/futures/Future.h>
 #include <thread>
+#include <infra/StatusException.h>
 
 DEFINE_string(zkdir, "~/playground/cpp/test_fbthrift/zookeeper-3.4.9", "zookeeper directory");
 
@@ -39,7 +40,7 @@ struct ZKHelper {
 TEST(ZooKafkaClient, DISABLED_init_without_zk)
 {
     infra::ZooKafkaClient client("test", "localhost:2181");
-    ASSERT_THROW(client.init(), infra::ZookeeperException);
+    ASSERT_THROW(client.init(), infra::StatusException);
 }
 
 TEST(ZooKafkaClient, basic_ops)

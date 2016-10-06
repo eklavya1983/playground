@@ -4,8 +4,10 @@
 #include <infra/gen/gen-cpp2/ServiceApi.h>
 #include <infra/gen/configtree_constants.h>
 #include <infra/ServiceServer.h>
-#include <infra/Serializer.tcc>
-#include <zookeeper.h>   /* Included just ZNONODE error */
+#include <infra/ConnectionCache.h>
+#include <infra/gen-ext/KVBinaryData_ext.tcc>
+#include <infra/StatusException.h>
+#include <infra/gen/status_types.h>
 
 namespace infra {
 
@@ -34,6 +36,7 @@ Service::Service(const std::string &logContext,
     serviceInfo_(info)
 {
     coordinationClient_ = coordinationClient;
+    connectionCache_ = std::make_shared<ConnectionCache>(logContext_, this);
     if (enableServer) {
         server_ = std::make_shared<ServiceServer>(logContext,
                                                   serviceInfo_.ip,
@@ -45,40 +48,39 @@ Service::Service(const std::string &logContext,
 
 Service::~Service()
 {
+    CLog(INFO) << "Exiting Service";
 }
 
 
 void Service::init()
 {
+    serviceEntryKey_ = folly::sformat(
+        g_configtree_constants.SERVICE_ROOT_PATH_FORMAT,
+        getDatasphereId(), getServiceId()); 
+
     if (coordinationClient_) {
         initCoordinationClient_();
 
-        /* ensure service is part of the data sphere */
+        /* ensure service is part of the data sphere, otherwise will throw */
         ensureDatasphereMembership_();
         /* fetch properties */
         /* init connection cache */
+        connectionCache_->init();
     } else {
-        CLog(INFO) << "coordination client is disabled.  Not initializing coordination client";
+        CLog(INFO) << "Coordination client is disabled."
+            << "  Not initializing CoordinationClient, ConnectionCache";
     }
 
 
     if (server_) {
         initServer_();
     } else {
-        CLog(INFO) << "server is disabled.  Not initializing server";
+        CLog(INFO) << "Server is disabled.  Not initializing server";
     }
 
     /* publish this service is up */
     if (coordinationClient_) {
-#if 0
-        std::string payload;
-        serializeToThriftJson<>(serviceInfo_, payload, getLogContext());
-        auto f = coordinationClient_->set();
-        f.wait();
-
-        serializeToThriftJson<ServiceInfo>(serviceInfo_, payload, getLogContext());
-        coordinationClient_->publishMessage()
-#endif
+        publishServiceInfomation_();
     }
 }
 
@@ -90,6 +92,11 @@ void Service::run()
 void Service::shutdown()
 {
     server_->stop();
+}
+
+const std::string& Service::getServiceEntryKey() const
+{
+    return serviceEntryKey_;
 }
 
 std::string Service::getDatasphereId() const
@@ -114,14 +121,14 @@ CoordinationClient* Service::getCoordinationClient() const
 
 ConnectionCache* Service::getConnectionCache() const
 {
-    return nullptr;
+    return connectionCache_.get();
 }
 
 void Service::initCoordinationClient_()
 {
     /* Connect with zookeeper */
     coordinationClient_->init();
-    CLog(INFO) << "connected established with zookeeper";
+    CLog(INFO) << "Initialized CoordinationClient";
 }
 
 void Service::initServer_()
@@ -131,19 +138,35 @@ void Service::initServer_()
 
 void Service::ensureDatasphereMembership_()
 {
-    auto serviceEntryKey = folly::sformat(g_configtree_constants.SERVICE_ROOT_PATH_FORMAT,
-                                          getDatasphereId(),
-                                          getServiceId());
     try {
-        coordinationClient_->get(serviceEntryKey).get();
-    } catch (const ZookeeperException &e) {
+        coordinationClient_->get(getServiceEntryKey()).get();
+    } catch (const StatusException &e) {
         // TODO(Rao): We are leaking zookeeper specific error codes.  We
         // shouldn't
-        if (e.getError() == ZNONODE) {
-            CLog(FATAL) << "Service entry doesn't exist in configuration client";
+        if (e.getStatus() == STATUS_INVALID_KEY) {
+            CLog(ERROR) << "Service entry doesn't exist in ConfigDb";
         }
         throw;
     }
+}
+
+void Service::publishServiceInfomation_()
+{
+    /* Update config db with service information */
+    std::string payload;
+    serializeToThriftJson<>(serviceInfo_, payload, getLogContext());
+    auto f = coordinationClient_->set(getServiceEntryKey(), payload, -1);
+    f.wait();
+
+    /* Publish the new service information to service topic */
+    KVBinaryData kvb;
+    kvb.data = std::move(payload);
+    setVersion(kvb, f.value());
+    serializeToThriftJson<>(kvb, payload, getLogContext());
+    coordinationClient_->publishMessage(g_configtree_constants.TOPIC_SERVICES,
+                                        payload);
+
+    CLog(INFO) << "Published service information to ConfigDb";
 }
 
 }  // namespace infra

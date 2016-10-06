@@ -8,19 +8,43 @@
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 #include <infra/Service.h>
 #include <infra/gen/gen-cpp2/ServiceApi.h>
+#include <infra/CoordinationClient.h>
+#include <infra/StatusException.h>
 #include <boost/cast.hpp>
 #include <testlib/DatomBringupHelper.h>
+#include <testlib/SignalUtils.h>
+#include <infra/ZooKafkaClient.h>
 
 using namespace apache::thrift::async;
 using namespace apache::thrift;
+using namespace infra;
+
 
 TEST(Service, bringup)
 {
     testlib::DatomBringupHelper bringupHelper;
-    bringupHelper.cleanStartDatom();
+    testlib::ScopedDatom d(bringupHelper);
 
     bringupHelper.addDataSphere("sphere1");
+
+    ServiceInfo serviceInfo;
+    serviceInfo.dataSphereId = "sphere1";
+    serviceInfo.nodeId = "node1";
+    serviceInfo.id = "service1";
+
+    std::unique_ptr<Service> service1 (Service::newDefaultService(serviceInfo.id,
+                                                                  serviceInfo,
+                                                                  "localhost:2181"));
+    /* Init without service being added to datasphere should fail */
+    ASSERT_THROW(service1->init(), StatusException);
+
     bringupHelper.addService("sphere1", "node1", "service1", "127.0.0.1", 8080);
+    service1.reset(Service::newDefaultService(serviceInfo.id,
+                                              serviceInfo,
+                                              "localhost:2181"));
+    service1->init();
+
+    // testlib::waitForSIGINT();
 }
 
 TEST(Service, DISABLED_testserver)

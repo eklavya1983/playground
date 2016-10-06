@@ -14,6 +14,8 @@ namespace infra {
 
 struct KVBinaryData;
 
+
+
 struct CoordinationClient {
     using MsgReceivedCb = std::function<void (int64_t, const std::string &)>;
 

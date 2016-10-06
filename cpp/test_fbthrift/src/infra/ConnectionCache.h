@@ -15,7 +15,7 @@ struct ModuleProvider;
 struct ConnectionCache {
     ConnectionCache(const std::string &logContext,
                     ModuleProvider* provider);
-    virtual ~ConnectionCache() = default;
+    virtual ~ConnectionCache();
     virtual void init();
 
     std::string getConnectionId(const ServiceInfo& info);

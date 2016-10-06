@@ -109,6 +109,7 @@ T deserializeThriftJsonData(const KVBinaryData &kvb, const std::string &logConte
 {
     T ret;
     deserializeFromThriftJson<T>(kvb.data, ret,logContext); 
+    return ret;
 }
 
 }  // namespace infra

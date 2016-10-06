@@ -1,6 +1,7 @@
 #include <folly/futures/Future.h>
 #include <folly/Format.h>
 #include <infra/gen/commontypes_types.h>
+#include <infra/gen-ext/KVBinaryData_ext.tcc>
 #include <infra/gen/configtree_types.h>
 #include <infra/ConnectionCache.h>
 #include <infra/ModuleProvider.h>
@@ -27,17 +28,27 @@ ConnectionCache::ConnectionCache(const std::string &logContext,
     provider_ = provider;
 }
 
+ConnectionCache::~ConnectionCache()
+{
+    CLog(INFO) << "Exiting ConnectionCache";
+}
+
 void ConnectionCache::init()
 {
     /* TODO(Rao): Register to receive service updates */
-    auto f = [this](int64_t version, const std::string &payload) {
+    auto f = [this](int64_t sequenceNo, const std::string &payload) {
+        CLog(INFO) << "ConnectionCache update version:" << sequenceNo << " info:" << payload;
+#if 0
         ServiceInfo info;
         deserializeFromThriftJson<ServiceInfo>(payload, info, getLogContext());
-        CLog(INFO) << "connection cache update version:" << version << " info:" << info;
+        CLog(INFO) << "ConnectionCache update version:" << version << " info:" << info;
         // TODO: Update cache in event base
+#endif
     };
     provider_->getCoordinationClient()->\
         subscribeToTopic(g_configtree_constants.TOPIC_SERVICES, f);
+    CLog(INFO) << "ConnectionCache subscribed to topic:" << g_configtree_constants.TOPIC_SERVICES;
+    CLog(INFO) << "Initialized ConnectionCache";
 }
 
 std::string ConnectionCache::getConnectionId(const ServiceInfo& info)
@@ -60,14 +71,13 @@ void ConnectionCache::fetchMyDatasphereEntries_()
     auto serviceList = provider_->\
                        getCoordinationClient()->\
                        getChildrenSync(servicesRootPath);
-    for (const auto &kv: serviceList) {
-        auto &vData = kv.second;
+    for (const auto &kvd: serviceList) {
         auto entry = std::make_shared<CacheItem>();
-        entry->serviceVersion = vData.version;
-        deserializeFromThriftJson<ServiceInfo>(vData.data, entry->serviceInfo, logContext_);
+        entry->serviceVersion = getVersion(kvd);
+        entry->serviceInfo = deserializeThriftJsonData<ServiceInfo>(kvd, getLogContext());
         connections_[getConnectionId(entry->serviceInfo)] = entry;
 
-        CLog(INFO) << "added " << entry->serviceInfo << " version:" << entry->serviceVersion;
+        CLog(INFO) << "Added " << entry->serviceInfo << " version:" << entry->serviceVersion;
     }
 }
 

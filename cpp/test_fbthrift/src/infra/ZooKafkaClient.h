@@ -14,19 +14,6 @@ namespace infra {
 struct KafkaClient;
 
 /**
- * @brief Connection exception
- */
-struct ZookeeperException : std::exception {
-    ZookeeperException(int ecode)
-        : zkError_(ecode)
-    {
-    }
-    int getError() const { return zkError_; }
- private:
-    int zkError_{0};
-};
-
-/**
  * @brief C++ zookeeper kafka client
  */
 struct ZooKafkaClient : CoordinationClient {
@@ -42,7 +29,6 @@ struct ZooKafkaClient : CoordinationClient {
                    const std::string& consumerGroupId="");
     ~ZooKafkaClient();
     void init() override;
-    void close();
 
     folly::Future<std::string> create(const std::string &key,
                                       const std::string &value) override;
@@ -66,8 +52,8 @@ struct ZooKafkaClient : CoordinationClient {
                        const std::string &message) override;
     int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) override;
 
-    std::string typeToStr(int type);
-    std::string stateToStr(int state);
+    static std::string typeToStr(int type);
+    static std::string stateToStr(int state);
     void watcher(int type, int state, const char *path);
 
     zhandle_t* getHandle() { return zh_; }

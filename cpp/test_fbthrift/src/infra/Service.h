@@ -12,6 +12,7 @@ namespace infra {
 
 struct ServiceServer;
 struct CoordinationClient;
+struct ConnectionCache;
 
 /**
  * @brief Base Service class
@@ -29,6 +30,7 @@ struct Service : ModuleProvider {
     virtual void run();
     virtual void shutdown();
 
+    const std::string& getServiceEntryKey() const;
     std::string getDatasphereId() const override;
     std::string getNodeId() const override;
     std::string getServiceId() const override;
@@ -47,12 +49,15 @@ struct Service : ModuleProvider {
     virtual void initCoordinationClient_();
     virtual void initServer_();
     virtual void ensureDatasphereMembership_();
+    virtual void publishServiceInfomation_();
 
     std::string                                 logContext_;
     ServiceInfo                                 serviceInfo_;
+    std::string                                 serviceEntryKey_;
     /* client for coordination services */
-    std::shared_ptr<CoordinationClient>        coordinationClient_;
-
+    std::shared_ptr<CoordinationClient>         coordinationClient_;
+    /* Connection cache */
+    std::shared_ptr<ConnectionCache>            connectionCache_;
     /* Server */
     std::shared_ptr<ServiceServer>              server_;
 

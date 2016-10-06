@@ -65,6 +65,8 @@ KafkaClient::~KafkaClient()
     if (rebalanceCb_) delete rebalanceCb_;
 
     RdKafka::wait_destroyed(5000);
+
+    CLog(INFO) << "Exiting KafkaClient";
 }
 
 void KafkaClient::init()
@@ -82,7 +84,7 @@ void KafkaClient::init()
         CLog(ERROR) << "Unable to create producer";
         throw std::runtime_error("Unable to create producer");
     }
-    CLog(INFO) << "created publisher";
+    CLog(INFO) << "Created producer against brokers:" << brokers_;
 
     /* Initialize subscriber */
     auto status = conf->set("group.id",  consumerGroupId_, errstr);
@@ -95,22 +97,25 @@ void KafkaClient::init()
         CLog(ERROR) << "Unable to create consumer";
         throw std::runtime_error("Unable to create consumer");
     }
-    CLog(INFO) << "created subscriber";
+    CLog(INFO) << "Created subscriber brokers:" << brokers_
+        << " consumergroupid:" << consumerGroupId_;
 
     /* Start listening for subscribed messages */
     consumeThread_ = new std::thread([this]() {
-        CLog(INFO) << "subscribe loop started";
+        CLog(INFO) << "Subscribe loop started";
         while (!aborted_) {
             std::unique_ptr<RdKafka::Message> msg(consumer_->consume(1000));
             consumeMessage_(msg.get(), NULL);
         }
-        CLog(INFO) << "subscribe loop ended";
+        CLog(INFO) << "Subscribe loop ended";
     });
 }
 
 int KafkaClient::publishMessage(const std::string &topic,
                                 const std::string &message)
 {
+    // TODO(Rao): It's possible to not use lock here by having KafkaClient run
+    // on event base.  Consider it as an optimization
     std::shared_ptr<RdKafka::Topic> t;
     {
         std::lock_guard<std::mutex> lock(publishTopicsLock_);
@@ -120,10 +125,11 @@ int KafkaClient::publishMessage(const std::string &topic,
             t.reset(RdKafka::Topic::create(producer_, topic,
                                            nullptr, errstr));
             if (!t) {
-                CLog(WARNING) << "failed to create topic: " << topic << " error:" << errstr;
+                CLog(WARNING) << "Failed to create topic:" << topic << " error:" << errstr;
                 return STATUS_PUBLISH_FAILED;
             }
             publishTopics_[topic] = t;
+            CLog(INFO) << "Started publishing to new topic:" << topic;
         } else {
             t = itr->second;
         }
@@ -135,7 +141,7 @@ int KafkaClient::publishMessage(const std::string &topic,
                            const_cast<char *>(message.c_str()), message.size(),
                            NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR) {
-        CLog(WARNING) << "failed to publish message to topic:" << topic
+        CLog(WARNING) << "Failed to publish message to topic:" << topic
             << " error:" << RdKafka::err2str(resp);
         return STATUS_PUBLISH_FAILED;
     }
@@ -147,17 +153,17 @@ int KafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb 
     std::lock_guard<std::mutex> lock(subscriptionLock_);
     auto itr = subscriptionCbs_.find(topic);
     if (itr != subscriptionCbs_.end()) {
-        CLog(WARNING) << "already subscribed to topic:" << topic << " ignoring request";
+        CLog(WARNING) << "Already subscribed to topic:" << topic << " ignoring request";
         return STATUS_INVALID;
     }
     subscriptionCbs_[topic] = cb;
     RdKafka::ErrorCode err = consumer_->subscribe({topic});
     if (err) {
-        CLog(WARNING) << "failed to subscribe to topic:" << topic
+        CLog(WARNING) << "Failed to subscribe to topic:" << topic
             << " error:" << RdKafka::err2str(err);
         return STATUS_SUBSCRIBE_FAILED;
     }
-    CLog(INFO) << "subscribed to topic:" << topic;
+    CLog(INFO) << "Subscribed to topic:" << topic;
     return STATUS_OK;
 }
 
@@ -172,7 +178,7 @@ void KafkaClient::consumeMessage_(RdKafka::Message* message, void* opaque)
             auto topic = message->topic_name();
             auto itr = subscriptionCbs_.find(topic);
             if (itr == subscriptionCbs_.end()) {
-                CLog(WARNING) << "received message for topic:" << topic
+                CLog(WARNING) << "Received message for topic:" << topic
                     << " that doesn't have registered callback.  Ignoring";
                 break;
             }
@@ -265,7 +271,7 @@ void KafkaClient::rebalanceCallback(RdKafka::KafkaConsumer *consumer,
         << ": ";
 
     for (unsigned int i = 0 ; i < partitions.size() ; i++) {
-        CLog(INFO) << partitions[i]->topic() <<
+        CLog(INFO) << "RebalanceCb: " << partitions[i]->topic() <<
             "[" << partitions[i]->partition() << "], ";
     }
 

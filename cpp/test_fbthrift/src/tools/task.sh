@@ -84,12 +84,18 @@ function startdatom {
     done
 }
 
-# Stops, clean, and starts datom
-function cleanstartdatom {
+# Stops, clean datom
+function cleanstopdatom {
     stopdatom
     cleandatom
+}
+
+# Stops, clean, and starts datom
+function cleanstartdatom {
+    cleanstopdatom
     startdatom
 }
+
 
 # Another version of starting datom not in use
 function startdatom2 {
