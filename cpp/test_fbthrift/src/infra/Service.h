@@ -37,7 +37,7 @@ struct Service : ModuleProvider {
     CoordinationClient* getCoordinationClient() const override;
     ConnectionCache*    getConnectionCache() const override;
 
-    inline std::string getLogContext() const {
+    inline const std::string& getLogContext() const {
         return logContext_;
     }
 

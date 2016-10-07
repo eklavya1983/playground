@@ -4,7 +4,6 @@
 #include <folly/futures/Future.h>
 #include <thread>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <thrift/lib/cpp/async/TEventBase.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 #include <infra/Service.h>
 #include <infra/gen/gen-cpp2/ServiceApi.h>
@@ -67,13 +66,13 @@ TEST(Service, DISABLED_testserver)
     std::thread t([s]() { s->run(); });
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    TEventBase base;
+    folly::EventBase base;
     std::shared_ptr<TAsyncSocket> socket(
         TAsyncSocket::newSocket(&base, "127.0.0.1", 8082));
 
     infra::cpp2::ServiceApiAsyncClient client(
         std::unique_ptr<HeaderClientChannel,
-        apache::thrift::async::TDelayedDestruction::Destructor>(
+        folly::DelayedDestruction::Destructor>(
             new HeaderClientChannel(socket)));
 
     boost::polymorphic_downcast<HeaderClientChannel*>(

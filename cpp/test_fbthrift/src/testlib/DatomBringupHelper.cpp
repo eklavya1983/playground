@@ -25,7 +25,7 @@ struct ConfigService : Service {
     }
 
     void init() override {
-        serviceEntryKey_ = g_configtree_constants.CONFIGSERVICE_ROOT;
+        serviceEntryKey_ = configtree_constants::CONFIGSERVICE_ROOT();
 
         initCoordinationClient_();
         /* Init connection cache, etc */
@@ -58,9 +58,9 @@ struct ConfigService : Service {
      */
     void createDatom() {
         /* Do a create */
-        auto f = coordinationClient_->create(g_configtree_constants.DATOM_ROOT, "");
+        auto f = coordinationClient_->create(configtree_constants::DATOM_ROOT(), "");
         f.get();
-        CLog(INFO) << "Created datom root at:" << g_configtree_constants.DATOM_ROOT;
+        CLog(INFO) << "Created datom root at:" << configtree_constants::DATOM_ROOT();
         f = coordinationClient_->create(getServiceEntryKey(), "");
         CLog(INFO) << "Created config service root at:" << getServiceEntryKey();
 
@@ -75,7 +75,7 @@ struct ConfigService : Service {
 
         /* Do a create */
         auto f = coordinationClient_->createIncludingAncestors(
-            folly::sformat(g_configtree_constants.DATASPHERE_ROOT_PATH_FORMAT, info.id),
+            folly::sformat(configtree_constants::DATASPHERE_ROOT_PATH_FORMAT(), info.id),
             payload);
         f.get();
         CLog(INFO) << "Added new datasphere id:" << info.id;
@@ -89,7 +89,7 @@ struct ConfigService : Service {
 
         /* Do a Put */
         auto f = coordinationClient_->createIncludingAncestors(
-            folly::sformat(g_configtree_constants.SERVICE_ROOT_PATH_FORMAT,
+            folly::sformat(configtree_constants::SERVICE_ROOT_PATH_FORMAT(),
                            info.dataSphereId, info.id),
             payload);
         f.get();

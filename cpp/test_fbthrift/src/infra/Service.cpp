@@ -55,7 +55,7 @@ Service::~Service()
 void Service::init()
 {
     serviceEntryKey_ = folly::sformat(
-        g_configtree_constants.SERVICE_ROOT_PATH_FORMAT,
+        configtree_constants::SERVICE_ROOT_PATH_FORMAT(),
         getDatasphereId(), getServiceId()); 
 
     if (coordinationClient_) {
@@ -163,7 +163,7 @@ void Service::publishServiceInfomation_()
     kvb.data = std::move(payload);
     setVersion(kvb, f.value());
     serializeToThriftJson<>(kvb, payload, getLogContext());
-    coordinationClient_->publishMessage(g_configtree_constants.TOPIC_SERVICES,
+    coordinationClient_->publishMessage(configtree_constants::TOPIC_SERVICES(),
                                         payload);
 
     CLog(INFO) << "Published service information to ConfigDb";

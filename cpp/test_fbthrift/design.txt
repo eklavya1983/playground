@@ -27,6 +27,8 @@ Config service
 -First the user will have to create datom tree.  This will create a node with config serivce as an entry in the tree.
 -When config service comes up it checks if path /datom/configservice exists.  If it exits, then it's an existing dataom instance.  Otherwise it's a fresh instance.
 -Under /datom/configserivce/instance will be a znode that stays up until config service stays up
+Handling errors
+-We will return exceptions.  That way it's possible include descriptive error messages as well.  Same can be done with status code also.  But it'd require creating an error code for each case.
 
 datom cli commands
 

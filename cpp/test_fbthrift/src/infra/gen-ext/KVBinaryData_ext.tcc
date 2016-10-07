@@ -76,32 +76,32 @@ T getProp(const KVBinaryData &kvb, const std::string &key)
 
 inline void setVersion(KVBinaryData &kvb, int64_t version)
 {
-    setProp<int64_t>(kvb, g_commontypes_constants.KEY_VERSION, version);
+    setProp<int64_t>(kvb, commontypes_constants::KEY_VERSION(), version);
 }
 
 inline int64_t getVersion(const KVBinaryData &kvb)
 {
-    return getProp<int64_t>(kvb, g_commontypes_constants.KEY_VERSION);
+    return getProp<int64_t>(kvb, commontypes_constants::KEY_VERSION());
 }
 
 inline void setType(KVBinaryData &kvb, const std::string &type)
 {
-    setProp<std::string>(kvb, g_commontypes_constants.KEY_TYPE, type);
+    setProp<std::string>(kvb, commontypes_constants::KEY_TYPE(), type);
 }
 
 inline std::string getType(const KVBinaryData &kvb)
 {
-    return getProp<std::string>(kvb, g_commontypes_constants.KEY_TYPE);
+    return getProp<std::string>(kvb, commontypes_constants::KEY_TYPE());
 }
 
 inline void setId(KVBinaryData &kvb, const std::string &id)
 {
-    setProp<std::string>(kvb, g_commontypes_constants.KEY_ID, id);
+    setProp<std::string>(kvb, commontypes_constants::KEY_ID(), id);
 }
 
 inline std::string getId(const KVBinaryData &kvb)
 {
-    return getProp<std::string>(kvb, g_commontypes_constants.KEY_ID);
+    return getProp<std::string>(kvb, commontypes_constants::KEY_ID());
 }
 
 template <class T>

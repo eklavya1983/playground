@@ -21,14 +21,16 @@ set (CMAKE_CXX_STANDARD 11)
 set(TOPDIR ${CMAKE_SOURCE_DIR})
 message("topdir is: ${TOPDIR}")
 
+# 3rd party artifacts includes
+set(ARTIFACTS_INCLUDE_DIRS ${TOPDIR}/artifacts/include)
+set(ARTIFACTS_LIB_DIRS ${TOPDIR}/artifacts/lib)
+
 # fbthrift related common variables
 set(FBTHRIFT_INCLUDE_DIRS
-	${TOPDIR}/fbthrift
-	${TOPDIR}/fbthrift/thrift/folly)
+	${ARTIFACTS_INCLUDE_DIRS})
+
 set(FBTHRIFT_LIB_DIRS
-	${TOPDIR}/fbthrift/thrift/lib/cpp/.libs
-	${TOPDIR}/fbthrift/thrift/lib/cpp2/.libs
-	${TOPDIR}/fbthrift/thrift/folly/folly/.libs)
+	${ARTIFACTS_LIB_DIRS})
 
 # thrift related variables
 set(THRIFT_INCLUDE_DIRS ${TOPDIR}/thrift-0.9.3/lib/cpp/src)
@@ -41,10 +43,6 @@ set(GTEST_LIB_DIRS ${TOPDIR}/gtest-1.7.0/lib/.libs)
 # zookeeper related variables
 set(ZOOKEEPER_INCLUDE_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/include ${TOPDIR}/zookeeper-3.4.9/src/c/generated)
 set(ZOOKEEPER_LIB_DIRS ${TOPDIR}/zookeeper-3.4.9/src/c/.libs)
-
-# 3rd party artifacts includes
-set(ARTIFACTS_INCLUDE_DIRS ${TOPDIR}/artifacts/include)
-set(ARTIFACTS_LIB_DIRS ${TOPDIR}/artifacts/lib)
 
 # Common set of libraries to link for binaries
 #set(COMMON_LIBS thriftcpp2 thrift folly glog gflags pthread boost_system double-conversion z)

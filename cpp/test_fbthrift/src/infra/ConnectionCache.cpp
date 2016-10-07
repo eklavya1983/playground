@@ -15,7 +15,7 @@ namespace infra {
 
 struct ConnectionCache::CacheItem {
     CacheItem() {
-        serviceVersion = g_commontypes_constants.INVALID_VERSION;
+        serviceVersion = commontypes_constants::INVALID_VERSION();
     }
     ServiceInfo         serviceInfo;
     int64_t             serviceVersion;
@@ -46,8 +46,8 @@ void ConnectionCache::init()
 #endif
     };
     provider_->getCoordinationClient()->\
-        subscribeToTopic(g_configtree_constants.TOPIC_SERVICES, f);
-    CLog(INFO) << "ConnectionCache subscribed to topic:" << g_configtree_constants.TOPIC_SERVICES;
+        subscribeToTopic(configtree_constants::TOPIC_SERVICES(), f);
+    CLog(INFO) << "ConnectionCache subscribed to topic:" << configtree_constants::TOPIC_SERVICES();
     CLog(INFO) << "Initialized ConnectionCache";
 }
 
@@ -58,7 +58,7 @@ std::string ConnectionCache::getConnectionId(const ServiceInfo& info)
 
 void ConnectionCache::fetchMyDatasphereEntries_()
 {
-    auto servicesRootPath = folly::sformat(g_configtree_constants.SERVICES_ROOT_PATH_FORMAT,
+    auto servicesRootPath = folly::sformat(configtree_constants::SERVICES_ROOT_PATH_FORMAT(),
                                            provider_->getDatasphereId());
     /* We assume this function is called for service initialization context
      * That is why there is no locking necessary
