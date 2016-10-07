@@ -96,6 +96,14 @@ struct ConfigService : Service {
         CLog(INFO) << "Added service " << info;
     }
 
+    void startVolumeCluster()
+    {
+    }
+
+    void startDataCluster()
+    {
+    }
+
  protected:
     void ensureDatasphereMembership_() override {
         /* No need to check for memebership for config service */

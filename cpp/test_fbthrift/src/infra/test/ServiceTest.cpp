@@ -44,6 +44,15 @@ TEST(Service, bringup)
                                               "localhost:2181"));
     service1->init();
 
+    /* Add another service */
+    serviceInfo.id = "service2";
+    bringupHelper.addService("sphere1", "node1", serviceInfo.id, "127.0.0.1", 8084);
+    std::unique_ptr<Service> service2 (Service::newDefaultService(serviceInfo.id,
+                                                                  serviceInfo,
+                                                                  "localhost:2181"));
+    service2->init();
+
+
     // testlib::waitForSIGINT();
 }
 

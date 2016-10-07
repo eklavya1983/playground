@@ -7,7 +7,7 @@ FBTHRIFT_CPP2_GEN_PATH = $(TOPDIR)/fbthrift/thrift/compiler/py/build/lib.linux-x
 
 infra: commontypes.thrift status.thrift configtree.thrift service.thrift
 	$(FBTHRIFT_CPP) --gen cpp -out $(TOPDIR)/src/infra/gen commontypes.thrift
-	$(FBTHRIFT_CPP) --gen cpp -out $(TOPDIR)/src/infra/gen status.thrift
+	$(FBTHRIFT_CPP) --gen cpp:enum_strict -out $(TOPDIR)/src/infra/gen status.thrift
 	$(FBTHRIFT_CPP) --gen cpp -out $(TOPDIR)/src/infra/gen configtree.thrift
 	PYTHONPATH=$(FBTHRIFT_CPP2_GEN_PATH) python -mthrift_compiler.main --gen cpp2:process_in_event_base,json -o $(TOPDIR)/src/infra/gen service.thrift
 	#$(FBTHRIFT_CPP) --gen cpp -out $(TOPDIR)/src/infra/gen service.thrift

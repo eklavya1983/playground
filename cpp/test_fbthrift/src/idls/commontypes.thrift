@@ -19,6 +19,13 @@ struct ServiceInfo {
 	5: i32				port;
 }
 
+struct VolumeInfo {
+	1: i64				id;
+	2: string			name;
+	3: string			datasphereId;
+	4: i32				redundancyRingId;
+}
+
 const i32 INVALID_VERSION = -1;
 
 /* Common keys */
