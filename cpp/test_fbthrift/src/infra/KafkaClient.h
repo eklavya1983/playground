@@ -26,6 +26,7 @@ namespace infra {
 
 struct KafkaEventCb;
 struct KafkaRebalanceCb;
+enum class Status;
 
 /**
  * @brief Kafka client
@@ -39,9 +40,9 @@ struct KafkaClient {
     virtual ~KafkaClient();
     virtual void init();
 
-    int publishMessage(const std::string &topic,
+    Status publishMessage(const std::string &topic,
                        const std::string &message);
-    int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb);
+    Status subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb);
 
     void eventCallback(RdKafka::Event &event);
     void rebalanceCallback(RdKafka::KafkaConsumer *consumer,

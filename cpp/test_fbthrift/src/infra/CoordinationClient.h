@@ -13,7 +13,7 @@ struct Unit;
 namespace infra {
 
 struct KVBinaryData;
-
+enum class Status;
 
 
 struct CoordinationClient {
@@ -30,9 +30,9 @@ struct CoordinationClient {
                                        const std::string &value,
                                        const int &version) = 0;
     
-    virtual int publishMessage(const std::string &topic,
+    virtual Status publishMessage(const std::string &topic,
                        const std::string &message) = 0;
-    virtual int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) = 0;
+    virtual Status subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) = 0;
 #if 0
     virtual folly::Future<std::string> put(const std::string &key,
                                            const std::string &value) = 0;

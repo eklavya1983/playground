@@ -62,7 +62,7 @@ TEST(KafkaClient, init)
     int sentCnt = 0;
     for (; sentCnt < 10; sentCnt++) {
         auto status = client.publishMessage("test", "hello");
-        ASSERT_TRUE(status == infra::STATUS_OK);
+        ASSERT_TRUE(status == infra::Status::STATUS_OK);
     }
 
     int sleptSecs = 0;

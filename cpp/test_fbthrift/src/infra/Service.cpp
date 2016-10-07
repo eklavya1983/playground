@@ -143,7 +143,7 @@ void Service::ensureDatasphereMembership_()
     } catch (const StatusException &e) {
         // TODO(Rao): We are leaking zookeeper specific error codes.  We
         // shouldn't
-        if (e.getStatus() == STATUS_INVALID_KEY) {
+        if (e.getStatus() == Status::STATUS_INVALID_KEY) {
             CLog(ERROR) << "Service entry doesn't exist in ConfigDb";
         }
         throw;

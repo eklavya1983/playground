@@ -12,6 +12,7 @@ typedef struct _zhandle zhandle_t;
 namespace infra {
 
 struct KafkaClient;
+enum class Status;
 
 /**
  * @brief C++ zookeeper kafka client
@@ -48,9 +49,9 @@ struct ZooKafkaClient : CoordinationClient {
                                    const std::string &value) override;
 #endif
 
-    int publishMessage(const std::string &topic,
+    Status publishMessage(const std::string &topic,
                        const std::string &message) override;
-    int subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) override;
+    Status subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb) override;
 
     static std::string typeToStr(int type);
     static std::string stateToStr(int state);

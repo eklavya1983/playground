@@ -37,7 +37,7 @@ struct ConfigService : Service {
             (void) f.get();
             datomConfigured_ = true;
         } catch (const StatusException &e) {
-            if (e.getStatus() == STATUS_INVALID_KEY) {
+            if (e.getStatus() == Status::STATUS_INVALID_KEY) {
                 datomConfigured_ = false;
                 CLog(INFO) << "Datom is not yet configured.  Will wait";
                 return;

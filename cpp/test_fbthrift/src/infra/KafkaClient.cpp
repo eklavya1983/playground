@@ -111,7 +111,7 @@ void KafkaClient::init()
     });
 }
 
-int KafkaClient::publishMessage(const std::string &topic,
+Status KafkaClient::publishMessage(const std::string &topic,
                                 const std::string &message)
 {
     // TODO(Rao): It's possible to not use lock here by having KafkaClient run
@@ -126,7 +126,7 @@ int KafkaClient::publishMessage(const std::string &topic,
                                            nullptr, errstr));
             if (!t) {
                 CLog(WARNING) << "Failed to create topic:" << topic << " error:" << errstr;
-                return STATUS_PUBLISH_FAILED;
+                return Status::STATUS_PUBLISH_FAILED;
             }
             publishTopics_[topic] = t;
             CLog(INFO) << "Started publishing to new topic:" << topic;
@@ -143,28 +143,28 @@ int KafkaClient::publishMessage(const std::string &topic,
     if (resp != RdKafka::ERR_NO_ERROR) {
         CLog(WARNING) << "Failed to publish message to topic:" << topic
             << " error:" << RdKafka::err2str(resp);
-        return STATUS_PUBLISH_FAILED;
+        return Status::STATUS_PUBLISH_FAILED;
     }
-    return STATUS_OK;
+    return Status::STATUS_OK;
 }
 
-int KafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb)
+Status KafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb)
 {
     std::lock_guard<std::mutex> lock(subscriptionLock_);
     auto itr = subscriptionCbs_.find(topic);
     if (itr != subscriptionCbs_.end()) {
         CLog(WARNING) << "Already subscribed to topic:" << topic << " ignoring request";
-        return STATUS_INVALID;
+        return Status::STATUS_INVALID;
     }
     subscriptionCbs_[topic] = cb;
     RdKafka::ErrorCode err = consumer_->subscribe({topic});
     if (err) {
         CLog(WARNING) << "Failed to subscribe to topic:" << topic
             << " error:" << RdKafka::err2str(err);
-        return STATUS_SUBSCRIBE_FAILED;
+        return Status::STATUS_SUBSCRIBE_FAILED;
     }
     CLog(INFO) << "Subscribed to topic:" << topic;
-    return STATUS_OK;
+    return Status::STATUS_OK;
 }
 
 void KafkaClient::consumeMessage_(RdKafka::Message* message, void* opaque)

@@ -27,13 +27,13 @@ static StatusException toStatusException(int zkError)
     // TODO(Rao): Enhance by adding other mappings
     switch (zkError) {
         case ZNONODE:
-            e.setStatus(STATUS_INVALID_KEY);
+            e.setStatus(Status::STATUS_INVALID_KEY);
             break;
         case ZNODEEXISTS:
-            e.setStatus(STATUS_DUPLICATE_KEY);
+            e.setStatus(Status::STATUS_DUPLICATE_KEY);
             break;
         default:
-            e.setStatus(STATUS_INVALID);
+            e.setStatus(Status::STATUS_INVALID);
     }
     return e;
 }
@@ -281,10 +281,10 @@ folly::Future<std::string> ZooKafkaClient::createIncludingAncestors(const std::s
         f = f.then([this, path, value](folly::Try<std::string> t) {
                try {
                     // if previous path creation failed below statement will
-                    // throw.  We ignore STATUS_DUPLICATE_KEY
+                    // throw.  We ignore Status::STATUS_DUPLICATE_KEY
                     (void) t.value();
                } catch (const StatusException &e) {
-                    if (e.getStatus() != STATUS_DUPLICATE_KEY) {
+                    if (e.getStatus() != Status::STATUS_DUPLICATE_KEY) {
                         CLog(INFO) << path << " already exists.  Ignoring create";
                         throw e;
                     }
@@ -391,13 +391,13 @@ folly::Future<std::string> ZooKafkaClient::put(const std::string &key,
 }
 #endif
 
-int ZooKafkaClient::publishMessage(const std::string &topic,
+Status ZooKafkaClient::publishMessage(const std::string &topic,
                                    const std::string &message)
 {
     return kafkaClient_->publishMessage(topic, message);
 }
 
-int ZooKafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb)
+Status ZooKafkaClient::subscribeToTopic(const std::string &topic, const MsgReceivedCb &cb)
 {
     return kafkaClient_->subscribeToTopic(topic, cb);
 }
