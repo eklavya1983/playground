@@ -1,3 +1,5 @@
+#pragma once
+
 #include <exception>
 #include <zookeeper.h>
 #include <testlib/DatomBringupHelper.h>
@@ -12,11 +14,10 @@
 #include <infra/StatusException.h>
 #include <infra/gen/status_types.h>
 
-DEFINE_string(toolsdir, "", "tools directory");
-
 namespace testlib {
 using namespace infra;
 
+# if 0
 struct ConfigService : Service {
     using Service::Service;
 
@@ -111,54 +112,57 @@ struct ConfigService : Service {
 
     bool datomConfigured_ {false};
 };
+#endif
 
-DatomBringupHelper::DatomBringupHelper()
+template <class ConfigServiceT>
+DatomBringupHelper<ConfigServiceT>::DatomBringupHelper()
 {
-    if (FLAGS_toolsdir.empty()) {
-        throw std::runtime_error("toolsdir flag isn't specified");
-    }
-    taskScript_ = folly::sformat("{}/task.sh", FLAGS_toolsdir);
 }
 
-void DatomBringupHelper::cleanStartDatom()
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::cleanStartDatom()
 {
     /* Bringup zookeeper and kafka */
-    std::system(folly::sformat("{} cleanstartdatom", taskScript_).c_str());
+    KafkaRunner_.cleanstart();
 
     /* Bringup  config service */
     auto zkClient = std::make_shared<ZooKafkaClient>("ConfigService",
                                                      "localhost:2181",
                                                      "ConfigService");
-    configService_ = std::make_shared<ConfigService>("ConfigService",
-                                                     ServiceInfo(),
-                                                     false,
-                                                     zkClient);
+    configService_ = std::make_shared<ConfigServiceT>("ConfigService",
+                                                      ServiceInfo(),
+                                                      false,
+                                                      zkClient);
     configService_->init();
 
     /* Create datom namespace */
     configService_->createDatom();
 }
 
-void DatomBringupHelper::cleanStopDatom()
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::cleanStopDatom()
 {
     configService_.reset();
-    std::system(folly::sformat("{} cleanstopdatom", taskScript_).c_str());
+    KafkaRunner_.cleanstop();
 }
 
-void DatomBringupHelper::shutdownDatom()
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::shutdownDatom()
 {
     configService_.reset();
-    std::system(folly::sformat("{} stopdatom", taskScript_).c_str());
+    KafkaRunner_.stop();
 }
 
-void DatomBringupHelper::addDataSphere(const std::string &dataSphereId)
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::addDataSphere(const std::string &dataSphereId)
 {
     DataSphereInfo info;
     info.id = dataSphereId;
     configService_->addDataSphere(info);
 }
 
-void DatomBringupHelper::addService(const std::string &dataSphereId,
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::addService(const std::string &dataSphereId,
                                     const std::string &nodeId,
                                     const std::string &serviceId,
                                     const std::string &ip,
@@ -173,13 +177,15 @@ void DatomBringupHelper::addService(const std::string &dataSphereId,
     configService_->addService(info);
 }
 
-ScopedDatom::ScopedDatom(DatomBringupHelper& d)
+template <class ConfigServiceT>
+ScopedDatom<ConfigServiceT>::ScopedDatom(DatomBringupHelper<ConfigServiceT>& d)
     : datom_(d)
 {
     datom_.cleanStartDatom();
 }
 
-ScopedDatom::~ScopedDatom()
+template <class ConfigServiceT>
+ScopedDatom<ConfigServiceT>::~ScopedDatom()
 {
     datom_.cleanStopDatom();
 }

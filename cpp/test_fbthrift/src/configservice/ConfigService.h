@@ -1,8 +1,10 @@
 #pragma once
 
 #include <unordered_map>
+#include <memory>
 #include <infra/InfraForwards.h>
 #include <infra/Service.h>
+#include <folly/SharedMutex.h>
 
 namespace config {
 
@@ -31,8 +33,10 @@ struct ConfigService : Service {
  protected:
     void ensureDatasphereMembership_() override;
 
+    using DatasphereConfigTable = std::unordered_map<std::string, DatasphereConfigMgrSPtr>;
     bool                                                        datomConfigured_ {false};
-    std::unordered_map<std::string, DatasphereConfigMgrSPtr>    datasphereTable_;
+    folly::SharedMutex                                          datasphereMutex_;
+    DatasphereConfigTable                                       datasphereTable_;
 };
 
 }  // namespace config

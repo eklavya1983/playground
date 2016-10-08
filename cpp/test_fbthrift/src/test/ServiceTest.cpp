@@ -10,19 +10,21 @@
 #include <infra/CoordinationClient.h>
 #include <infra/StatusException.h>
 #include <boost/cast.hpp>
-#include <testlib/DatomBringupHelper.h>
+#include <testlib/DatomBringupHelper.tcc>
 #include <testlib/SignalUtils.h>
 #include <infra/ZooKafkaClient.h>
+#include <configservice/ConfigService.h>
 
 using namespace apache::thrift::async;
 using namespace apache::thrift;
 using namespace infra;
+using namespace config;
 
 
-TEST(Service, bringup)
+TEST(ServiceTest, init)
 {
-    testlib::DatomBringupHelper bringupHelper;
-    testlib::ScopedDatom d(bringupHelper);
+    testlib::DatomBringupHelper<ConfigService> bringupHelper;
+    testlib::ScopedDatom<ConfigService> d(bringupHelper);
 
     bringupHelper.addDataSphere("sphere1");
 

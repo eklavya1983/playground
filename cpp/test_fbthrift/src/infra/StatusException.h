@@ -33,6 +33,11 @@ struct StatusException : std::exception {
         return originalStatus_;
     }
 
+    const char* what() const noexcept override
+    {
+        return _Status_VALUES_TO_NAMES.at(status_);
+    }
+
  private:
     Status status_;
     int originalStatus_;

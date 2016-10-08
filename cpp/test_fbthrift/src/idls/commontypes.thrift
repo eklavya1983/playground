@@ -23,7 +23,12 @@ struct VolumeInfo {
 	1: i64				id;
 	2: string			name;
 	3: string			datasphereId;
-	4: i32				redundancyRingId;
+	4: i32				ringId;
+}
+
+struct RingInfo {
+	1: i32				id;
+	2: list<string>			memberIds;
 }
 
 const i32 INVALID_VERSION = -1;

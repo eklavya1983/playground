@@ -1,9 +1,8 @@
 #pragma once
 #include <string>
-#include <gflags/gflags.h>
 #include <memory>
+#include <testlib/KafkaRunner.h>
 
-DECLARE_string(toolsdir);
 
 namespace infra {
 struct ServiceInfo;
@@ -12,10 +11,9 @@ struct CoordinationClient;
 struct Service;
 }
 
+
 namespace testlib {
-
-struct ConfigService;
-
+template <class ConfigServiceT>
 struct DatomBringupHelper {
     DatomBringupHelper();
     virtual ~DatomBringupHelper() = default;
@@ -32,21 +30,22 @@ struct DatomBringupHelper {
                     const int port);
 
  protected:
-    std::string                                     taskScript_;
-    std::shared_ptr<ConfigService>                  configService_;
+    KafkaRunner                                     KafkaRunner_;
+    std::shared_ptr<ConfigServiceT>                 configService_;
 };
 
 /**
  * @brief RAII helper to clean start and clean stop datom
  */
+template <class ConfigServiceT>
 struct ScopedDatom {
-    ScopedDatom(DatomBringupHelper& d);
+    ScopedDatom(DatomBringupHelper<ConfigServiceT>& d);
     ~ScopedDatom();
     ScopedDatom(const ScopedDatom&) = delete;
     void operator=(ScopedDatom const &) = delete;
 
  private:
-    DatomBringupHelper &datom_;
+    DatomBringupHelper<ConfigServiceT> &datom_;
 };
 
-}  // namespace
+}  // namespace testlib

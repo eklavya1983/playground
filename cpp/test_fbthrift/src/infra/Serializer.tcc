@@ -61,6 +61,24 @@ void deserializeFromThriftJson(const std::string &payloadBuf,
     deserializeFromThriftProto<PayloadT, tp::TJSONProtocol>(payloadBuf, payload, logCtx);
 }
 
+template <class PayloadT>
+std::string serializeToThriftJson(const PayloadT &payload,
+                                  const std::string &logCtx)
+{
+    std::string ret;
+    serializeToThriftJson<PayloadT>(payload, ret, logCtx);
+    return ret;
+}
+
+template<class PayloadT>
+PayloadT deserializeFromThriftJson(const std::string &payloadBuf,
+                                   const std::string &logCtx)
+{
+    PayloadT ret;
+    deserializeFromThriftJson<PayloadT>(payloadBuf, ret, logCtx);
+    return ret;
+}
+
 #if 0
 template<class PayloadT>
 void serializeVersionData(const int64_t &version,

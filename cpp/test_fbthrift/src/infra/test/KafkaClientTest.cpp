@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
 #include <infra/gen/status_types.h>
-#include <testlib/DatomBringupHelper.h>
+#include <testlib/KafkaRunner.h>
 
 DEFINE_string(group, "service1", "consumer service group");
 
@@ -40,8 +40,7 @@ struct KafkaRunner {
 
 TEST(KafkaClient, init)
 {
-    testlib::DatomBringupHelper bringupHelper;
-    testlib::ScopedDatom d(bringupHelper);
+    testlib::ScopedKafkaRunner kafkaRunner;
 
     infra::KafkaClient client(FLAGS_group, "localhost", FLAGS_group);
     client.init();

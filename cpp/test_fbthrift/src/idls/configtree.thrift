@@ -9,8 +9,10 @@ const string CONFIGSERVICE_ROOT                     	= "/datom/configservice"
 const string DATASPHERE_ROOT_PATH_FORMAT            	= "/dataspheres/{}"
 const string SERVICES_ROOT_PATH_FORMAT              	= "/dataspheres/{}/services"
 const string SERVICE_ROOT_PATH_FORMAT               	= "/dataspheres/{}/services/{}"
-const string REPLICA_CLUSTER_ROOT_PATH_FORMAT		= "/dataspheres/{}/replicacluster/{}"
-const string REPLICA_CLUSTER_RING_ROOT_PATH_FORMAT	= "/dataspheres/{}/replicacluster/{}/rings/{}"
-const string REPLICA_CLUSTER_RESOURCE_ROOT_PATH_FORMAT	= "/dataspheres/{}/replicacluster/{}/resources/{}"
+
+
+const string PB_SPHERE_ROOT_PATH_FORMAT			= "/dataspheres/{}/pbsphere/{}"
+const string PB_SPHERE_RING_ROOT_PATH_FORMAT		= "/dataspheres/{}/pbsphere/{}/rings/{}"
+const string PB_SPHERE_RESOURCE_ROOT_PATH_FORMAT	= "/dataspheres/{}/pbsphere/{}/sphere/{}"
 
 const string TOPIC_SERVICES                         	= "services"
