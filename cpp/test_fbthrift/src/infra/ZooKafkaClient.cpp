@@ -140,6 +140,7 @@ ZooKafkaClient::ZooKafkaClient(const std::string &logContext,
     servers_(servers)
 {
     if (!consumerGroupId.empty()) {
+        // TODO(Rao): Don't hardcode to localhost
         kafkaClient_ = std::make_shared<KafkaClient>(logContext,
                                                      "localhost",
                                                      consumerGroupId);

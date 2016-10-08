@@ -28,6 +28,7 @@ struct DatomBringupHelper {
                     const std::string &serviceId,
                     const std::string &ip,
                     const int port);
+    inline ConfigServiceT* getConfigService() { return configService_.get(); }
 
  protected:
     KafkaRunner                                     KafkaRunner_;

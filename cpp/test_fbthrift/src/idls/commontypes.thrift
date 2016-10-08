@@ -11,12 +11,18 @@ struct NodeInfo {
 	3: list<string> 		serviceIds;
 }
 
+enum ServiceType {
+	VOLUME_SERVER = 1,
+	CLI = 2
+}
+
 struct ServiceInfo {
 	1: string 			id;
 	2: string 			dataSphereId;
 	3: string 			nodeId;
-	4: string 			ip;
-	5: i32				port;
+	4: ServiceType			type;
+	5: string 			ip;
+	6: i32				port;
 }
 
 struct VolumeInfo {

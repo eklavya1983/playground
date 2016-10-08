@@ -10,7 +10,8 @@ while [ -h "$SOURCE" ]; do
 done
 TOOLSDIR="$(cd -P "$( dirname "${SOURCE}" )" && pwd )"
 SOURCEDIR="$( cd ${TOOLSDIR}/.. && pwd)"
-KAFKADIR="$( cd ${SOURCEDIR}/../kafka_2.11-0.10.0.0 && pwd)"
+KAFKADIR="$( cd ${SOURCEDIR}/../kafka_2.11-0.10.0.0 && pwd )"
+ZKDIR="$( cd ${SOURCEDIR}/../zookeeper-3.4.9 && pwd )"
 printf "srcdir: $SOURCEDIR\n"
 printf "toolsdir: $TOOLSDIR\n"
 printf "kafkadir: $KAFKADIR\n"
@@ -94,6 +95,8 @@ function cleanstopdatom {
 function cleanstartdatom {
     cleanstopdatom
     startdatom
+    sleep 1
+    ${ZKDIR}/bin/zkCli.sh create /datom datom
 }
 
 

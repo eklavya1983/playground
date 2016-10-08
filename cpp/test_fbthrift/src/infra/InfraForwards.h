@@ -4,6 +4,11 @@ namespace folly {
 template <class T>
 class Future;
 struct Unit;
+struct EventBase;
+}
+
+namespace wangle {
+struct IOThreadPoolExecutor;
 }
 
 namespace infra {

@@ -13,7 +13,9 @@
 #include <infra/LockHelper.tcc>
 
 #include <folly/io/async/EventBase.h>
+#include <wangle/concurrent/IOThreadPoolExecutor.h>
 #include <infra/gen/configtree_constants.h>
+#include <infra/gen-ext/KVBinaryData_ext.tcc>
 
 namespace config {
 
@@ -24,23 +26,30 @@ template<class ConfigServiceT, class ResourceT>
 struct PBResourceSphereConfigMgr {
     PBResourceSphereConfigMgr(ConfigServiceT *parent,
                               const std::string &datasphereId,
+                              const std::string &id,
                               int32_t replicaFactor,
                               folly::EventBase *eb)
     {
         parent_ = parent;
         datasphereId_ = datasphereId;
+        id_ = id;
         replicaFactor_ = replicaFactor;
         eb_ = eb;
         nextAddRingId_ = 0;
+        nextResourceId_ = 0;
+        logContext_ = folly::sformat("{}:PBResourceSphereConfigMgr", parent_->getLogContext());
+        resourcesTopic_ = folly::sformat(configtree_constants::TOPIC_PB_SPHERE_RESOURCES(),
+                                         id_);
     }
 
     inline const std::string& getLogContext() const {
-        return parent_->getLogContext();
+        return logContext_;
     }
 
     virtual VoidFuture addService(const ServiceInfo &info) {
         return via(eb_).then([this, info]() {
             pendingServices_.push_back(info.id);
+            CLog(INFO) << "added service " << info;
             if (pendingServices_.size() >= replicaFactor_) {
                 // TODO(Rao): Support adding services when pending is >
                 // replicaFactor_
@@ -50,15 +59,15 @@ struct PBResourceSphereConfigMgr {
                 ring.memberIds = std::move(pendingServices_);
                 pendingServices_.clear();
                 auto f = addRing_(ring);
-                f
+                f = f
                 .onError([this, ring](const StatusException &e) {
                     // TODO(Rao): Handle this
                     CHECK(!"Failed to add.  Currenlty not handled");
-                    CLog(INFO) << "failed to add service: " << e.what();
+                    CLog(INFO) << "failed to add ring: " << e.what();
                  });
                 return f;
             }
-            return;
+            return folly::makeFuture();
         });
     }
 
@@ -78,8 +87,10 @@ struct PBResourceSphereConfigMgr {
 
             auto resourceRoot = folly::sformat(
                 configtree_constants::PB_SPHERE_RESOURCE_ROOT_PATH_FORMAT(),
-                datasphereId_, pbsphereId_, resource.id);
+                datasphereId_, id_, resource.id);
             auto payload = serializeToThriftJson<>(resource, getLogContext());
+
+            CLog(INFO) << "add resource root at: " << resourceRoot;
 
             auto f = parent_->getCoordinationClient()->\
             createIncludingAncestors(resourceRoot, payload)
@@ -87,6 +98,7 @@ struct PBResourceSphereConfigMgr {
             .then([this, resource](const std::string& data) {
                   resources_[resource.id] = resource;
                   CLog(INFO) << "added resource " << resource;
+                  publishResourceInfo_(resource, 0);
                   return resource;
             });
 
@@ -99,8 +111,11 @@ struct PBResourceSphereConfigMgr {
     {
         DCHECK(eb_->isInEventBaseThread());
         auto ringRoot = folly::sformat(configtree_constants::PB_SPHERE_RING_ROOT_PATH_FORMAT(),
-                                       datasphereId_, ring.id);
+                                       datasphereId_, id_, ring.id);
         auto payload = serializeToThriftJson<>(ring, getLogContext());
+
+        CLog(INFO) << "add ring root at: " << ringRoot;
+
         auto f = parent_->getCoordinationClient()->createIncludingAncestors(ringRoot, payload);
         return f
             .via(eb_)
@@ -114,9 +129,25 @@ struct PBResourceSphereConfigMgr {
     {
     }
 
+    virtual void publishResourceInfo_(const ResourceT &info, int64_t version)
+    {
+
+        /* Publish the resource information to resources topic */
+        KVBinaryData kvb;
+        setVersion(kvb, version);
+        kvb.data = serializeToThriftJson<>(info, getLogContext());
+
+        std::string payload = serializeToThriftJson<>(kvb, getLogContext());
+        parent_->getCoordinationClient()->publishMessage(resourcesTopic_, payload);
+
+        CLog(INFO) << "Published " << info
+            << " resource information to ConfigDb version:" << version;
+    }
+
+    std::string                                 logContext_;
     ConfigServiceT                              *parent_;
     std::string                                 datasphereId_;
-    std::string                                 pbsphereId_;
+    std::string                                 id_;
     int32_t                                     replicaFactor_;
     folly::EventBase                            *eb_;
     /* Pending services from which ring can be created */
@@ -129,6 +160,7 @@ struct PBResourceSphereConfigMgr {
     std::unordered_map<int64_t, ResourceT>      resources_;
     /* Id for the next to be added resource */
     int64_t                                     nextResourceId_;
+    std::string                                 resourcesTopic_;
 };
 
 using PBVolumeConfigMgr = PBResourceSphereConfigMgr<ConfigService, VolumeInfo>;
@@ -141,8 +173,22 @@ struct DatasphereConfigMgr {
     }
     virtual ~DatasphereConfigMgr() = default;
 
+    void init()
+    {
+        volumesConfigMgr_ = std::make_shared<PBVolumeConfigMgr>(parent_,
+                                                                datasphereInfo_.id,
+                                                                "volumes",
+                                                                /* TODO(Rao):
+                                                                 * Don't hard
+                                                                 * code */
+                                                                3 /* replicafactor */,
+                                                                parent_->getEventBaseFromPool());
+    }
+
     const std::string& getLogContext() const { return parent_->getLogContext(); }
 
+    // TODO(Rao): Add service is a multi step process, consider making it 1.
+    // either a transaction or keep state to know up to which step is processed
     void addService(const ServiceInfo &info)
     {
         /* Serialize to TJson */
@@ -150,9 +196,10 @@ struct DatasphereConfigMgr {
         serializeToThriftJson<ServiceInfo>(info, payload, getLogContext());
 
         /* Update configdb */
+        auto path = folly::sformat(configtree_constants::SERVICE_ROOT_PATH_FORMAT(),
+                                   info.dataSphereId, info.id);
         auto f = parent_->getCoordinationClient()->createIncludingAncestors(
-            folly::sformat(configtree_constants::SERVICE_ROOT_PATH_FORMAT(),
-                           info.dataSphereId, info.id),
+            path,
             payload);
         f.get();
 
@@ -161,7 +208,22 @@ struct DatasphereConfigMgr {
             std::unique_lock<folly::SharedMutex> l(serviceCacheMutex_);
             serviceCache_[info.id] = info;
         }
-        CLog(INFO) << "Added service " << info;
+        CLog(INFO) << "Added service at path:" << path << info;
+
+        if (info.type == ServiceType::VOLUME_SERVER) {
+            auto addFuture = volumesConfigMgr_->addService(info);
+            try {
+                (void) addFuture.get();
+            } catch (const std::exception &e) {
+                CLog(INFO) << "Failed to add service " << info << " to volumeconfigmgr";
+            }
+        }
+    }
+
+    VolumeInfo addVolume(const VolumeInfo &info)
+    {
+        auto f = volumesConfigMgr_->addResource(info);
+        return f.get();
     }
 
  protected:
@@ -182,6 +244,9 @@ ConfigService::~ConfigService()
 void ConfigService::init()
 {
     serviceEntryKey_ = configtree_constants::CONFIGSERVICE_ROOT();
+
+    /* Init io threadpool */
+    ioThreadpool_ = std::make_shared<wangle::IOThreadPoolExecutor>(2);
 
     initCoordinationClient_();
     /* Init connection cache, etc */
@@ -204,17 +269,20 @@ void ConfigService::init()
     }
     CLog(INFO) << "Datom is already configured";
 
+    /* Publish config service is up if datom is already configured */
     publishServiceInfomation_();
 
+}
+
+folly::EventBase* ConfigService::getEventBaseFromPool()
+{
+    return ioThreadpool_->getEventBase();
 }
 
 void ConfigService::createDatom()
 {
     /* Do a create */
-    auto f = coordinationClient_->create(configtree_constants::DATOM_ROOT(), "");
-    f.get();
-    CLog(INFO) << "Created datom root at:" << configtree_constants::DATOM_ROOT();
-    f = coordinationClient_->create(getServiceEntryKey(), "");
+    auto f = coordinationClient_->create(getServiceEntryKey(), "");
     CLog(INFO) << "Created config service root at:" << getServiceEntryKey();
 
     publishServiceInfomation_();
@@ -235,7 +303,9 @@ void ConfigService::addDataSphere(const DataSphereInfo &info)
     /* update in memory state */
     {
         std::unique_lock<folly::SharedMutex> l(datasphereMutex_);
-        datasphereTable_[info.id] = std::make_shared<DatasphereConfigMgr>(this, info);
+        auto datasphere = std::make_shared<DatasphereConfigMgr>(this, info);
+        datasphere->init();
+        datasphereTable_[info.id] = datasphere;
     }
 
     CLog(INFO) << "Added new datasphere " << info;
@@ -243,17 +313,7 @@ void ConfigService::addDataSphere(const DataSphereInfo &info)
 
 void ConfigService::addService(const ServiceInfo &info)
 {
-    DatasphereConfigTable::iterator itr;
-    {
-        infra::SharedLock<folly::SharedMutex> l(datasphereMutex_);
-        /* lookup datasphere */
-        itr = datasphereTable_.find(info.dataSphereId);
-        if (itr == datasphereTable_.end()) {
-            CLog(WARNING) << " failed to add service.  datasphere:"
-                << info.dataSphereId << " not found";
-            throw StatusException(Status::STATUS_INVALID_DATASPHERE);
-        }
-    }
+    auto itr = getDatasphereOrThrow_(info.dataSphereId);
     /* add to datasphere */
     itr->second->addService(info);
 
@@ -267,9 +327,32 @@ void ConfigService::startDataCluster()
 {
 }
 
+VolumeInfo ConfigService::addVolume(const VolumeInfo &info)
+{
+    auto itr = getDatasphereOrThrow_(info.datasphereId);
+    return itr->second->addVolume(info);
+}
+
 void ConfigService::ensureDatasphereMembership_()
 {
     /* No need to check for memebership for config service */
+}
+
+ConfigService::DatasphereConfigTable::iterator
+ConfigService::getDatasphereOrThrow_(const std::string &id)
+{
+    DatasphereConfigTable::iterator itr;
+    {
+        infra::SharedLock<folly::SharedMutex> l(datasphereMutex_);
+        /* lookup datasphere */
+        itr = datasphereTable_.find(id);
+        if (itr == datasphereTable_.end()) {
+            CLog(WARNING) << " failed to add service.  datasphere:"
+                << id << " not found";
+            throw StatusException(Status::STATUS_INVALID_DATASPHERE);
+        }
+    }
+    return itr;
 }
 
 }  // namespace config
