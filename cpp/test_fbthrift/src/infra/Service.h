@@ -23,6 +23,7 @@ struct Service : ModuleProvider {
             bool enableServer,
             const std::shared_ptr<CoordinationClient> &coordinationClient);
     virtual ~Service();
+    Service() = delete;
     Service(const Service&) = delete;
     void operator=(Service const &) = delete;
 
