@@ -12,13 +12,13 @@ using namespace infra;
 
 struct VolumeServer;
 
-template<class ParentT>
+template<class ParentT, class ResourceInfoT>
 struct PBResourceReplica;
 
 template <class ParentT, class ResourceT>
 struct PBResourceMgr;
 
-using VolumeReplicaMgr = PBResourceMgr<VolumeServer, PBResourceReplica<VolumeServer>>;
+using VolumeReplicaMgr = PBResourceMgr<VolumeServer, PBResourceReplica<VolumeServer, VolumeInfo>>;
 
 struct VolumeServer : Service {
     using Service::Service;

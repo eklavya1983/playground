@@ -12,6 +12,7 @@ const string SERVICE_ROOT_PATH_FORMAT               	= "/dataspheres/{}/services
 
 
 const string PB_SPHERE_ROOT_PATH_FORMAT			= "/dataspheres/{}/pbsphere/{}"
+const string PB_SPHERE_RINGS_ROOT_PATH_FORMAT		= "/dataspheres/{}/pbsphere/{}/rings"
 const string PB_SPHERE_RING_ROOT_PATH_FORMAT		= "/dataspheres/{}/pbsphere/{}/rings/{}"
 const string PB_SPHERE_RESOURCES_ROOT_PATH_FORMAT	= "/dataspheres/{}/pbsphere/{}/resources"
 const string PB_SPHERE_RESOURCE_ROOT_PATH_FORMAT	= "/dataspheres/{}/pbsphere/{}/resources/{}"

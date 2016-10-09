@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <testlib/KafkaRunner.h>
+#include <unordered_map>
 
 
 namespace infra {
@@ -16,9 +17,9 @@ namespace testlib {
 template <class ConfigServiceT>
 struct DatomBringupHelper {
     DatomBringupHelper();
-    virtual ~DatomBringupHelper() = default;
     DatomBringupHelper(const DatomBringupHelper &) = delete;
     void operator=(DatomBringupHelper const &) = delete;
+    void stopServices();
     void cleanStartDatom();
     void cleanStopDatom();
     void shutdownDatom();
@@ -30,9 +31,15 @@ struct DatomBringupHelper {
                     const int port);
     inline ConfigServiceT* getConfigService() { return configService_.get(); }
 
+    void createPrimaryBackupDatasphere(const std::string &datasphereId,
+                                       int32_t numNodes);
+    std::string getLogContext() const { return "DatomBringupHelper"; }
+
+
  protected:
     KafkaRunner                                     KafkaRunner_;
     std::shared_ptr<ConfigServiceT>                 configService_;
+    std::unordered_map<std::string, std::shared_ptr<infra::Service>> services_;
 };
 
 /**

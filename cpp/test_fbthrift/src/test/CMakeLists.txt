@@ -14,4 +14,4 @@ endmacro()
 include_directories(${FBTHRIFT_INCLUDE_DIRS} ${ZOOKEEPER_INCLUDE_DIRS} ${ARTIFACTS_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
 link_directories(${FBTHRIFT_LIB_DIRS} ${GTEST_LIB_DIRS} ${ZOOKEEPER_LIB_DIRS} ${ARTIFACTS_LIB_DIRS})
 
-add_unit_test(Service)
+add_unit_test(Datom)

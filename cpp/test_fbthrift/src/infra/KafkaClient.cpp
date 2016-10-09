@@ -64,7 +64,7 @@ KafkaClient::~KafkaClient()
     if (eventCb_) delete eventCb_;
     if (rebalanceCb_) delete rebalanceCb_;
 
-    RdKafka::wait_destroyed(5000);
+    RdKafka::wait_destroyed(1000);
 
     CLog(INFO) << "Exiting KafkaClient";
 }
@@ -157,7 +157,13 @@ Status KafkaClient::subscribeToTopic(const std::string &topic, const MsgReceived
         return Status::STATUS_INVALID;
     }
     subscriptionCbs_[topic] = cb;
-    RdKafka::ErrorCode err = consumer_->subscribe({topic});
+    // TODO(Rao): Figure out if there is a better way to subscribe to new topics
+    // than like this where unsubscribe all and subscribe again
+    std::vector<std::string> topics;
+    for (const auto &kv : subscriptionCbs_) {
+        topics.push_back(kv.first);
+    }
+    RdKafka::ErrorCode err = consumer_->subscribe(topics);
     if (err) {
         CLog(WARNING) << "Failed to subscribe to topic:" << topic
             << " error:" << RdKafka::err2str(err);

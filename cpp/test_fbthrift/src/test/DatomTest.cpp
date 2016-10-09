@@ -26,7 +26,20 @@ TEST(Datom, pbcluster)
 {
     testlib::DatomBringupHelper<ConfigService> bringupHelper;
     testlib::ScopedDatom<ConfigService> d(bringupHelper);
+    bringupHelper.createPrimaryBackupDatasphere("datasphere1", 3);
 
+    sleep(5);
+
+    auto configService = bringupHelper.getConfigService();
+    for (int i = 0; i < 3; i++) {
+        VolumeInfo vol;
+        vol.datasphereId = "datasphere1";
+        vol.name = folly::sformat("vol{}", i);
+        auto retVol = configService->addVolume(vol);
+        ASSERT_EQ(retVol.id, i);
+    }
+
+#if 0
     DataSphereInfo datasphere;
     datasphere.id = "sphere1";
     auto configService = bringupHelper.getConfigService();
@@ -64,6 +77,7 @@ TEST(Datom, pbcluster)
                                                            "localhost:2181/datom",
                                                            serviceInfo1.id));
     service1.init();
+#endif
 
     testlib::waitForSIGINT();
 }

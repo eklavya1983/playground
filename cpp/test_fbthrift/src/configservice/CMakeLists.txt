@@ -9,7 +9,7 @@ add_library(config ConfigService.cpp)
 install (TARGETS config DESTINATION lib)
 
 add_executable(configservice ConfigServiceMain.cpp)
-target_link_libraries(configservice config infra zookeeper_mt rdkafka++ thriftcpp2 thrift folly ${COMMON_LIBS})
+target_link_libraries(configservice config testlib infra zookeeper_mt rdkafka++ thriftcpp2 thriftprotocol thrift folly zstd ${COMMON_LIBS})
 
 add_subdirectory(test)
 

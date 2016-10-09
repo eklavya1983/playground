@@ -13,13 +13,26 @@
 #include <infra/ConnectionCache.h>
 #include <infra/StatusException.h>
 #include <infra/gen/status_types.h>
+#include <volumeserver/VolumeServer.h>
 
 namespace testlib {
 using namespace infra;
+using namespace volumeserver;
 
 template <class ConfigServiceT>
 DatomBringupHelper<ConfigServiceT>::DatomBringupHelper()
 {
+}
+
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::stopServices()
+{
+    if (configService_) {
+        configService_.reset();
+    }
+    for (auto &kv : services_) {
+        kv.second.reset();
+    }
 }
 
 template <class ConfigServiceT>
@@ -45,14 +58,14 @@ void DatomBringupHelper<ConfigServiceT>::cleanStartDatom()
 template <class ConfigServiceT>
 void DatomBringupHelper<ConfigServiceT>::cleanStopDatom()
 {
-    configService_.reset();
+    stopServices();
     KafkaRunner_.cleanstop();
 }
 
 template <class ConfigServiceT>
 void DatomBringupHelper<ConfigServiceT>::shutdownDatom()
 {
-    configService_.reset();
+    stopServices();
     KafkaRunner_.stop();
 }
 
@@ -78,6 +91,55 @@ void DatomBringupHelper<ConfigServiceT>::addService(const std::string &dataSpher
     info.ip = ip;
     info.port = port;
     configService_->addService(info);
+}
+
+static ServiceInfo generateVolumeServiceInfo(const std::string &datasphereId,
+                                      int nodeIdx) 
+{
+    static int basePort = 2085;
+    ServiceInfo serviceInfo;
+    serviceInfo.dataSphereId = datasphereId;
+    serviceInfo.nodeId = folly::sformat("node{}", nodeIdx);
+    serviceInfo.id = folly::sformat("service{}", nodeIdx);
+    serviceInfo.type = ServiceType::VOLUME_SERVER;
+    serviceInfo.ip = "localhost";
+    serviceInfo.port = basePort + nodeIdx*10;
+    return serviceInfo;
+}
+
+template <class ConfigServiceT>
+void DatomBringupHelper<ConfigServiceT>::
+createPrimaryBackupDatasphere(const std::string &datasphereId,
+                              int32_t numNodes)
+{
+    DataSphereInfo datasphere;
+    datasphere.id = datasphereId;
+    configService_->addDataSphere(datasphere);
+
+    // TODO(Rao): Add nodes.  For now skipping adding nodes and directily adding
+    // services
+
+    std::vector<ServiceInfo> serviceInfos;
+    for (int i = 0; i < numNodes; i++) {
+        auto serviceInfo = generateVolumeServiceInfo(datasphereId, i);
+        configService_->addService(serviceInfo);
+        serviceInfos.push_back(serviceInfo);
+    }
+
+    for (const auto &info : serviceInfos) {
+        CLog(INFO) << "Starting service " << info;
+        auto configClient = std::make_shared<ZooKafkaClient>(info.id,
+                                                             "localhost:2181/datom",
+                                                             info.id);
+             
+        auto service = std::make_shared<VolumeServer>(info.id,
+                                                      info,
+                                                      false,
+                                                      configClient);
+        service->init();
+        auto id = folly::sformat("{}:{}", datasphereId, info.id);
+        services_[id] = service;
+    }
 }
 
 template <class ConfigServiceT>

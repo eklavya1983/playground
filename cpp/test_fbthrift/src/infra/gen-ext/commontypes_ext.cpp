@@ -31,4 +31,11 @@ std::ostream& operator << (std::ostream& out, const VolumeInfo &info)
     return out;
 }
 
+bool isRingMember(const RingInfo& info, const std::string serviceId)
+{
+    return (std::find(info.memberIds.begin(),
+                      info.memberIds.end(),
+                      serviceId) != info.memberIds.end());
+}
+
 }  // namespace infra
