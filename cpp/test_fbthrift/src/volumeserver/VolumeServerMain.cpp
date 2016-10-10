@@ -1,6 +1,7 @@
 #include <infra/InfraForwards.h>
 #include <volumeserver/VolumeServer.h>
 #include <infra/ZooKafkaClient.h>
+#include <infra/gen/gen-cpp2/commontypes_types.tcc>
 #include <gflags/gflags.h>
 #include <testlib/SignalUtils.h>
 
@@ -28,7 +29,7 @@ int main() {
     
     auto service = std::make_shared<VolumeServer>(info.id,
                                                   info,
-                                                  false,
+                                                  nullptr,
                                                   configClient);
     service->init();
     testlib::waitForSIGINT();

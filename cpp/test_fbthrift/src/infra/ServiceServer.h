@@ -3,6 +3,7 @@
 
 namespace apache {
 namespace thrift {
+class ServerInterface;
 class ThriftServer;
 namespace util {
 class ScopedServerThread;
@@ -12,10 +13,7 @@ class ScopedServerThread;
 
 namespace infra {
 
-namespace cpp2 {
-struct ServiceApiSvIf;
-}
-
+using ServerHandler = apache::thrift::ServerInterface;
 /**
  * @brief Default server for service
  */
@@ -23,7 +21,7 @@ struct ServiceServer {
     ServiceServer(const std::string &logContext,
                   const std::string &ip,
                   int port,
-                  const std::shared_ptr<cpp2::ServiceApiSvIf> &handler);
+                  const std::shared_ptr<ServerHandler> &handler);
     virtual ~ServiceServer() = default;
     ServiceServer(const ServiceServer&) = delete;
     void operator=(ServiceServer const &) = delete;
@@ -35,7 +33,7 @@ struct ServiceServer {
     std::string                                             logContext_;
     std::string                                             ip_;
     int                                                     port_;
-    std::shared_ptr<cpp2::ServiceApiSvIf>                   handler_;
+    std::shared_ptr<ServerHandler>                          handler_;
     std::shared_ptr<apache::thrift::ThriftServer>           server_;
     apache::thrift::util::ScopedServerThread                *serverThread_ {nullptr};
 };

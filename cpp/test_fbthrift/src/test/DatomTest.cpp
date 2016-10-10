@@ -22,7 +22,7 @@ using namespace infra;
 using namespace config;
 using namespace volumeserver;
 
-TEST(Datom, pbcluster)
+TEST(Datom, DISABLED_pbcluster)
 {
     testlib::DatomBringupHelper<ConfigService> bringupHelper;
     testlib::ScopedDatom<ConfigService> d(bringupHelper);
@@ -118,13 +118,13 @@ TEST(ServiceTest, DISABLED_init)
     // testlib::waitForSIGINT();
 }
 
-TEST(Service, DISABLED_testserver)
+TEST(Service, testserver)
 {
     infra::ServiceInfo info;
     info.id = "service1";
     info.ip = "localhost";
     info.port = 8082;
-    infra::Service *s = infra::Service::newDefaultService("test", info, "");
+    Service *s = new Service("test", info, std::make_shared<ServiceApiHandler>(), nullptr);
     s->init();
     std::thread t([s]() { s->run(); });
     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -133,7 +133,7 @@ TEST(Service, DISABLED_testserver)
     std::shared_ptr<TAsyncSocket> socket(
         TAsyncSocket::newSocket(&base, "127.0.0.1", 8082));
 
-    infra::cpp2::ServiceApiAsyncClient client(
+    infra::ServiceApiAsyncClient client(
         std::unique_ptr<HeaderClientChannel,
         folly::DelayedDestruction::Destructor>(
             new HeaderClientChannel(socket)));

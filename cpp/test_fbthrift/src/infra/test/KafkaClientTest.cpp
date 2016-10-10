@@ -3,10 +3,9 @@
 #include <folly/Format.h>
 #include <librdkafka/rdkafkacpp.h>
 #include <util/Log.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
-#include <infra/gen/status_types.h>
 #include <testlib/KafkaRunner.h>
 
 DEFINE_string(group, "service1", "consumer service group");

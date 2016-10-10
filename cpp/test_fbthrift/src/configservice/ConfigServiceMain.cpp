@@ -15,13 +15,12 @@ int main() {
     
     auto configService = std::make_shared<ConfigService>(id,
                                                          ServiceInfo(),
-                                                         false,
                                                          zkClient);
     configService->init();
 
     /* Create datom namespace */
     configService->createDatom();
 
-    testlib::waitForSIGINT();
+    configService->run();
     return 0;
 }

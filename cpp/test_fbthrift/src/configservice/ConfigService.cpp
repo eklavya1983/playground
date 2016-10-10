@@ -5,16 +5,17 @@
 #include <infra/ZooKafkaClient.h>
 #include <infra/Service.h>
 #include <infra/Serializer.tcc>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/gen-ext/commontypes_ext.h>
+#include <infra/gen/gen-cpp2/commontypes_types.tcc>
 #include <infra/ConnectionCache.h>
 #include <infra/MessageException.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 #include <infra/LockHelper.tcc>
+#include <infra/gen/gen-cpp2/ConfigApi.h>
 
 #include <folly/io/async/EventBase.h>
 #include <wangle/concurrent/IOThreadPoolExecutor.h>
-#include <infra/gen/configtree_constants.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
 
 namespace config {
@@ -50,10 +51,10 @@ struct PBResourceSphereConfigMgr {
         return via(eb_).then([this, info]() {
             pendingServices_.push_back(info.id);
             CLog(INFO) << "added service " << info;
-            if (pendingServices_.size() >= replicaFactor_) {
+            if (pendingServices_.size() >= static_cast<uint64_t>(replicaFactor_)) {
                 // TODO(Rao): Support adding services when pending is >
                 // replicaFactor_
-                CHECK(pendingServices_.size() == replicaFactor_);
+                CHECK(pendingServices_.size() == static_cast<uint64_t>(replicaFactor_));
                 RingInfo ring;
                 ring.id = nextAddRingId_++;
                 ring.memberIds = std::move(pendingServices_);
@@ -192,8 +193,7 @@ struct DatasphereConfigMgr {
     void addService(const ServiceInfo &info)
     {
         /* Serialize to TJson */
-        std::string payload;
-        serializeToThriftJson<ServiceInfo>(info, payload, getLogContext());
+        std::string payload = serializeToThriftJson<ServiceInfo>(info, getLogContext());
 
         /* Update configdb */
         auto path = folly::sformat(configtree_constants::SERVICE_ROOT_PATH_FORMAT(),
@@ -235,6 +235,34 @@ struct DatasphereConfigMgr {
 
     std::shared_ptr<PBVolumeConfigMgr>              volumesConfigMgr_;
 };
+
+struct ConfigApiHandler : ConfigApiSvIf {
+    ConfigApiHandler(ConfigService *parent)
+    {
+        parent_ = parent;
+    }
+    void addService(std::unique_ptr< ::infra::ServiceInfo> info) override
+    {
+        parent_->addService(*info);
+    }
+    void addVolume(std::unique_ptr< ::infra::VolumeInfo> info) override
+    {
+        parent_->addVolume(*info);
+    }
+
+ protected:
+    ConfigService                       *parent_;
+};
+
+ConfigService::ConfigService(const std::string &logContext,
+                             const ServiceInfo &info,
+                             const std::shared_ptr<CoordinationClient> &coordinationClient)
+    : Service(logContext,
+              info,
+              std::make_shared<ConfigApiHandler>(this),
+              coordinationClient)
+{
+}
 
 ConfigService::~ConfigService()
 {
@@ -291,8 +319,7 @@ void ConfigService::createDatom()
 void ConfigService::addDataSphere(const DataSphereInfo &info)
 {
     /* Serialize to TJson */
-    std::string payload;
-    serializeToThriftJson<DataSphereInfo>(info, payload, getLogContext());
+    std::string payload = serializeToThriftJson<DataSphereInfo>(info, getLogContext());
 
     /* Do a create in configdb */
     auto f = coordinationClient_->createIncludingAncestors(

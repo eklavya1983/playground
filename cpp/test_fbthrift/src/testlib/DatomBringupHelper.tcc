@@ -8,11 +8,11 @@
 #include <infra/ZooKafkaClient.h>
 #include <infra/Service.h>
 #include <infra/Serializer.tcc>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/gen-ext/commontypes_ext.h>
 #include <infra/ConnectionCache.h>
 #include <infra/StatusException.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 #include <volumeserver/VolumeServer.h>
 
 namespace testlib {
@@ -47,7 +47,6 @@ void DatomBringupHelper<ConfigServiceT>::cleanStartDatom()
                                                      "ConfigService");
     configService_ = std::make_shared<ConfigServiceT>("ConfigService",
                                                       ServiceInfo(),
-                                                      false,
                                                       zkClient);
     configService_->init();
 
@@ -134,7 +133,7 @@ createPrimaryBackupDatasphere(const std::string &datasphereId,
              
         auto service = std::make_shared<VolumeServer>(info.id,
                                                       info,
-                                                      false,
+                                                      nullptr,
                                                       configClient);
         service->init();
         auto id = folly::sformat("{}:{}", datasphereId, info.id);

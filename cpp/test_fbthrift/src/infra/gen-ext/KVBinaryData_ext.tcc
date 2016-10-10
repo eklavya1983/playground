@@ -1,7 +1,7 @@
 #pragma once
 
-#include <infra/gen/commontypes_types.h>
-#include <infra/gen/commontypes_constants.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
+#include <infra/gen/gen-cpp2/commontypes_constants.h>
 #include <folly/Conv.h>
 #include <infra/Serializer.tcc>
 
@@ -16,7 +16,7 @@ struct KVBinaryDataExt {
     KVBinaryDataExt(const KVBinaryData &kvb)
     {
         props_ = kvb.props;
-        deserializeFromThriftJson<T>(kvb.data, data_, ""); 
+        data_ = deserializeFromThriftJson<T>(kvb.data, ""); 
     }
 
     const T& data() const {
@@ -40,20 +40,18 @@ struct KVBinaryDataExt {
     KVBinaryData toKVBinaryData() {
         KVBinaryData kvb;
         kvb.props = props_;
-        serializeToThriftJson<T>(data_, kvb.data, "");
+        kvb.data = serializeToThriftJson<T>(data_, "");
         return kvb;
     }
 
     static KVBinaryDataExt fromKVBinaryDataThriftJson(const std::string &tJson) {
-        KVBinaryData kvb;
-        deserializeFromThriftJson<KVBinaryData>(tJson, kvb, "");
+        KVBinaryData kvb = deserializeFromThriftJson<KVBinaryData>(tJson, "");
         return KVBinaryDataExt(kvb);
     }
 
     std::string toKVBinaryDataThriftJson() {
         auto kvb = toKVBinaryData();
-        std::string tJson;
-        serializeToThriftJson<KVBinaryData>(kvb, tJson, "");
+        std::string tJson = serializeToThriftJson<KVBinaryData>(kvb, "");
         return tJson;
     }
 
@@ -108,7 +106,7 @@ template <class T>
 T deserializeThriftJsonData(const KVBinaryData &kvb, const std::string &logContext)
 {
     T ret;
-    deserializeFromThriftJson<T>(kvb.data, ret,logContext); 
+    ret = deserializeFromThriftJson<T>(kvb.data, logContext); 
     return ret;
 }
 

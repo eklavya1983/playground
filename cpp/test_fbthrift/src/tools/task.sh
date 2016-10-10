@@ -22,6 +22,10 @@ source ${TOOLSDIR}/utils.sh
 
 # Compile source code and install artifacts in src/../build folder
 function compile {
+    export CC=/usr/bin/gcc-4.9
+    export CXX=/usr/bin/g++-4.9
+    echo "cc is $CC"
+    echo "cxx is $CXX"
     cd ${SOURCEDIR}/../build
     cmake -DCMAKE_INSTALL_PREFIX="." ..
     make && make install

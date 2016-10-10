@@ -10,7 +10,7 @@ namespace infra {
 ServiceServer::ServiceServer(const std::string &logContext,
                              const std::string &ip,
                              int port,
-                             const std::shared_ptr<cpp2::ServiceApiSvIf> &handler)
+                             const std::shared_ptr<ServerHandler> &handler)
 {
     logContext_ = logContext;
     ip_ = ip;

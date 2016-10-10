@@ -1,47 +1,46 @@
 #include <util/Log.h>
 #include <infra/ZooKafkaClient.h>
 #include <infra/Service.h>
-#include <infra/gen/gen-cpp2/ServiceApi.h>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/ServiceServer.h>
 #include <infra/ConnectionCache.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
 #include <infra/StatusException.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
+#include <infra/gen/gen-cpp2/commontypes_types.tcc>
 
 namespace infra {
 
-struct ServiceApiHandler : cpp2::ServiceApiSvIf {
-    void getModuleState(std::string& _return,
-                        std::unique_ptr<std::map<std::string, std::string>> arguments) override {
-        _return = "ok";
-        LOG(INFO) << "returning hello";
-    }
-};
+void ServiceApiHandler::getModuleState(std::string& _return,
+                                       std::unique_ptr<std::map<std::string, std::string>> arguments)
+{
+    _return = "ok";
+    LOG(INFO) << "returning hello";
+}
 
 Service* Service::newDefaultService(const std::string &logContext,
                                     const ServiceInfo &info,
                                     const std::string &zkServers)
 {
     auto zkClient = std::make_shared<ZooKafkaClient>(logContext, zkServers, info.id);
-    auto service = new Service(logContext, info, true, zkClient);
+    auto service = new Service(logContext, info, nullptr, zkClient);
     return service;
 }
 
 Service::Service(const std::string &logContext,
                  const ServiceInfo &info,
-                 bool enableServer,
+                 const std::shared_ptr<ServerHandler> &handler,
                  const std::shared_ptr<CoordinationClient> &coordinationClient)
     : logContext_(logContext),
     serviceInfo_(info)
 {
     coordinationClient_ = coordinationClient;
     connectionCache_ = std::make_shared<ConnectionCache>(logContext_, this);
-    if (enableServer) {
+    if (handler) {
         server_ = std::make_shared<ServiceServer>(logContext,
                                                   serviceInfo_.ip,
                                                   serviceInfo_.port,
-                                                  std::make_shared<ServiceApiHandler>());
+                                                  handler);
     }
 }
 
@@ -153,8 +152,7 @@ void Service::ensureDatasphereMembership_()
 void Service::publishServiceInfomation_()
 {
     /* Update config db with service information */
-    std::string payload;
-    serializeToThriftJson<>(serviceInfo_, payload, getLogContext());
+    std::string payload = serializeToThriftJson<>(serviceInfo_, getLogContext());
     auto f = coordinationClient_->set(getServiceEntryKey(), payload, -1);
     f.wait();
 
@@ -162,7 +160,7 @@ void Service::publishServiceInfomation_()
     KVBinaryData kvb;
     kvb.data = std::move(payload);
     setVersion(kvb, f.value());
-    serializeToThriftJson<>(kvb, payload, getLogContext());
+    payload = serializeToThriftJson<>(kvb, getLogContext());
     coordinationClient_->publishMessage(configtree_constants::TOPIC_SERVICES(),
                                         payload);
 

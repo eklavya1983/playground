@@ -1,13 +1,14 @@
 #include <folly/futures/Future.h>
 #include <folly/Format.h>
-#include <infra/gen/commontypes_types.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
-#include <infra/gen/configtree_types.h>
+#include <infra/gen/gen-cpp2/configtree_types.h>
 #include <infra/ConnectionCache.h>
 #include <infra/ModuleProvider.h>
 #include <infra/CoordinationClient.h>
-#include <infra/gen/commontypes_constants.h>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/commontypes_constants.h>
+#include <infra/gen/gen-cpp2/commontypes_types.tcc>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/gen-ext/commontypes_ext.h>
 #include <infra/Serializer.tcc>
 

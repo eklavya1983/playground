@@ -1,6 +1,6 @@
 #include <zookeeper.h>
 #include <infra/ZooKafkaClient.h>
-#include <infra/gen/commontypes_types.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
 #include <chrono>
 #include <thread>
@@ -8,7 +8,7 @@
 #include <folly/futures/Future.h>
 #include <folly/Format.h>
 #include <infra/KafkaClient.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 #include <infra/StatusException.h>
 
 namespace infra {

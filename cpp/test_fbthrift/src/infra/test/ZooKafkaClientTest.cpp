@@ -1,5 +1,5 @@
 #include <infra/ZooKafkaClient.h>
-#include <infra/gen/commontypes_types.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
@@ -72,7 +72,7 @@ TEST(ZooKafkaClient, basic_ops)
 
     /* Ensure get children works */
     auto children = client.getChildrenSync("/services");
-    ASSERT_EQ(children.size(), 2);
+    ASSERT_EQ(children.size(), 2ull);
     auto itr = std::find_if(children.begin(), children.end(),
                  [](const infra::KVBinaryData &kvb) { return getId(kvb) == "service1";});
     ASSERT_TRUE(itr != children.end());

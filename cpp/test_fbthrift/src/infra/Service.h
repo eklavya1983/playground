@@ -2,7 +2,9 @@
 
 #include <memory>
 #include <infra/ModuleProvider.h>
-#include <infra/gen/commontypes_types.h>
+#include <infra/ServiceServer.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
+#include <infra/gen/gen-cpp2/ServiceApi.h>
 
 namespace apache { namespace thrift { namespace server {
 class TNonblockingServer;
@@ -10,9 +12,13 @@ class TNonblockingServer;
 
 namespace infra {
 
-struct ServiceServer;
 struct CoordinationClient;
 struct ConnectionCache;
+
+struct ServiceApiHandler : ServiceApiSvIf {
+    void getModuleState(std::string& _return,
+                        std::unique_ptr<std::map<std::string, std::string>> arguments) override;
+};
 
 /**
  * @brief Base Service class
@@ -20,7 +26,7 @@ struct ConnectionCache;
 struct Service : ModuleProvider {
     Service(const std::string &logContext,
             const ServiceInfo &info,
-            bool enableServer,
+            const std::shared_ptr<ServerHandler> &handler,
             const std::shared_ptr<CoordinationClient> &coordinationClient);
     virtual ~Service();
     Service() = delete;

@@ -5,16 +5,17 @@
 #include <infra/ZooKafkaClient.h>
 #include <infra/Service.h>
 #include <infra/Serializer.tcc>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/gen-ext/commontypes_ext.h>
+#include <infra/gen/gen-cpp2/commontypes_types.tcc>
 #include <infra/ConnectionCache.h>
 #include <infra/MessageException.h>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 #include <infra/LockHelper.tcc>
 
 #include <folly/io/async/EventBase.h>
 #include <wangle/concurrent/IOThreadPoolExecutor.h>
-#include <infra/gen/configtree_constants.h>
+#include <infra/gen/gen-cpp2/configtree_constants.h>
 #include <infra/gen-ext/KVBinaryData_ext.tcc>
 
 namespace volumeserver {

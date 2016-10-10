@@ -1,4 +1,4 @@
-#include <infra/gen/commontypes_types.h>
+#include <infra/gen/gen-cpp2/commontypes_types.h>
 
 namespace infra {
 

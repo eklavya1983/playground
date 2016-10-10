@@ -1,6 +1,6 @@
 #pragma once
 #include <exception>
-#include <infra/gen/status_types.h>
+#include <infra/gen/gen-cpp2/status_types.h>
 
 namespace infra {
 

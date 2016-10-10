@@ -1,7 +1,9 @@
 Now
--Don't need code to pull service cache yet
--subscribe to services topic
--want to see service info on the service channel as services come up
+-Test create volume
+-Test publishing volume info
+-Create volume server class
+--Pull volume table (part of PBVolumeConfigurator)
+--Reacts to notifications from pbvolume channel
 
 Infrastructure
 -Clean up log statements in zkadpater

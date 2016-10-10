@@ -16,7 +16,9 @@ using namespace infra;
 struct ConfigService : Service {
     using DatasphereConfigTable = std::unordered_map<std::string, DatasphereConfigMgrSPtr>;
 
-    using Service::Service;
+    ConfigService(const std::string &logContext,
+                  const ServiceInfo &info,
+                  const std::shared_ptr<CoordinationClient> &coordinationClient);
 
     virtual ~ConfigService();
 
